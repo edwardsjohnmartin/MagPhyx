@@ -1,0 +1,166 @@
+/* make the body fill the window */
+html, body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: #f0f0f0;
+}
+.mainTable {
+  border: 0px;
+  table-layout: fixed;
+  width: 100%;
+  height: 100%;
+}
+.mainTable td:nth-child(1) {
+    width: 130px;
+}
+.mainTable td:nth-child(2) {
+    width: 99%;
+}
+.mainTable td:nth-child(3) {
+    width: 200px;
+    text-align: center;
+}
+/*.mainTable td:nth-child(4) {
+    width: 90px;
+    vertical-align: bottom;
+    text-align: center;
+}*/
+/* make any canvas fill its container */
+.canvasDiv {
+    position: relative;
+    /*display: flex;
+    flex-flow: row;
+    width: 100%;
+    flex: 1 1 auto;*/
+    border: 1px dotted grey;
+    width: 100%;
+    height: 100%;
+    /*height: 600px;*/
+    /*width: 700px;
+    height: 700px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;*/
+}
+.canvas {
+    /*display: flex;
+    flex-flow: row;
+    width: 100%;
+    flex: 1 1 auto;*/
+    width: 100%;
+    height: 100%;
+    /*width: 700px;
+    height: 700px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;*/
+}
+.plotCanvas {
+    width: 180px;
+    height: 180px;
+    border-style: solid;
+    border-width: 0px 0px 1px 1px;
+}
+/* debug window */
+.debug {
+    /*position: absolute;*/
+    /*background-color: rgba(255, 255, 255, 0.8);*/
+    /*opacity: 0.4;*/
+    /*bottom: 10px;
+    left: 10px;*/
+}
+.number {
+    width: 55px;
+} 
+.dt {
+    width: 35px;
+} 
+/* settings window */
+.settings {
+    /*background-color: rgba(255, 0, 0, 0.8);*/
+    /*position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    bottom: 10px;*/
+    /*width: 200px;
+    right: 80px;*/
+}
+
+.threeCol, .twoCol {
+    table-layout: fixed;
+    width: 100%;
+}
+.threeCol td:nth-child(1),
+.threeCol td:nth-child(3),
+.threeCol td:nth-child(5) {
+  width: 15%;
+  text-align: right;
+}
+.threeCol td:nth-child(2),
+.threeCol td:nth-child(4),
+.threeCol td:nth-child(6) {
+  width: 15%;
+  text-align: left;
+}
+.twoCol td:nth-child(1),
+.twoCol td:nth-child(3) {
+  width: 15%;
+  text-align: right;
+}
+.twoCol td:nth-child(2),
+.twoCol td:nth-child(4) {
+  width: 35%;
+  text-align: left;
+}
+
+/* controls window */
+.controls {
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.8);
+    bottom: 10px;
+    right: 10px;
+}
+/* control button */
+.cbutton{
+    height:50px;
+    width:50px;
+}
+/* logo window */
+.logo {
+    position: absolute;
+    /*background-color: rgba(255, 255, 156, 0.8);*/
+    top: 10px;
+    left: 10px;
+    /*text-align: center;*/
+    font-family: Impact;
+    font-size: 30px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 500;
+    color: rgb(0, 0, 255);
+}
+.instructions {
+    padding: 20px 20px 20px 20px;
+}
+.plot-table {
+    table-layout:fixed;
+    width:100%;
+}
+.plot-table td:nth-child(1) {
+  width: 10px;
+}
+.plot-table td:nth-child(2) {
+    text-align: left;
+}
+.plot-table td:nth-child(3) {
+    text-align: center;
+}
+.plot-table td:nth-child(4) {
+    text-align: right;
+}
+.vertical-text {
+    transform: rotate(-90deg);
+    transform-origin: center center 0;
+    width: 5px;
+}

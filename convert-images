@@ -1,0 +1,10 @@
+#! /bin/bash
+
+#convert -density 300 -quality 95 -fuzz 50% -transparent white -resize 256x256 dipole.pdf dipole.png
+convert -density 300 -quality 95 -resize 256x256 dipole.pdf dipole.png
+open dipole.png
+
+#convert -density 300 -quality 95 -transparent white -resize 1088x1088 -crop 1024x1024+32+32 +repage dipole-field.pdf dipole-field.png
+#convert -density 300 -quality 95 -fuzz 50% -transparent white -resize 1088x1088 -crop 1024x1024+32+32 +repage dipole-field.pdf dipole-field.png
+convert -density 300 -quality 95 -resize 1088x1088 -crop 1024x1024+32+32 +repage dipole-field.pdf dipole-field.png
+open dipole-field.png

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="./font-awesome-4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="style2.css">
+  
+  <!------------------------------------------------------------>
+  <!------------------------- Javascript ----------------------->
+  <!------------------------------------------------------------>
+
+  <script type="text/javascript" src="./common/webgl-utils.js"></script>
+  <script type="text/javascript" src="./common/initShaders.js"></script>
+  <script type="text/javascript" src="./common/MV.js"></script>
+
+  <!--script type="text/javascript" src="w3-include-HTML.js"></script-->
+
+  <script type="text/javascript" src="programs.js"></script>
+  <script type="text/javascript" src="axis.js"></script>
+  <script type="text/javascript" src="sphere.js"></script>
+  <script type="text/javascript" src="circle.js"></script>
+  <script type="text/javascript" src="plot.js"></script>
+  <script type="text/javascript" src="sin2.js"></script>
+  <script type="text/javascript" src="forceArrow.js"></script>
+  <script type="text/javascript" src="bArrow.js"></script>
+  <script type="text/javascript" src="torqueArrow.js"></script>
+  <script type="text/javascript" src="square.js"></script>
+  <script type="text/javascript" src="floor.js"></script>
+  <script type="text/javascript" src="arrow.js"></script>
+  <script type="text/javascript" src="segment.js"></script>
+  <script type="text/javascript" src="physics.js"></script>
+  <script type="text/javascript" src="dipole.js"></script>
+  <script type="text/javascript" src="force.js"></script>
+  
+  </head>
+
+  <body>
+
+    <canvas class="canvas" id="gl-canvas">
+      Oops ... your browser doesn't support the HTML5 canvas element
+    </canvas>
+
+    <!--------------------------------------------------------->
+    <!-- Debug output -->
+    <!--------------------------------------------------------->
+    <div id="debug" class="debug"></div>
+
+    <!--------------------------------------------------------->
+    <!-- Settings -->
+    <!--------------------------------------------------------->
+    <div id="settings" class="settings">
+      <table class="threeCol">
+        <tr>
+          <td align="right" title="Distance from origin">r</td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="r"
+               value="1.1"
+               step="0.25"
+               onchange="r0Changed()">
+          </td>
+          <td align="right" title="Angle from origin">&theta;</td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="theta"
+               value="45"
+               step="0.25"
+               onchange="theta0Changed()">
+          </td>
+          <td align="right" title="Moment angle">&phi;</td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="phi"
+               value="0"
+               onchange="phi0Changed()">
+          </td>
+        </tr>
+
+        <tr>
+          <td align="right" title="Distance from origin">p<sub>r</sub></td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="pr"
+               value="0"
+               step="0.25"
+               onchange="pr0Changed()">
+          </td>
+          <td align="right" title="Angle from origin">p<sub>&theta;</sub></td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="ptheta"
+               value="0"
+               step="0.25"
+               onchange="ptheta0Changed()">
+          </td>
+          <td align="right" title="Moment angle">p<sub>&phi;</sub></td>
+          <td>
+            <input
+               type="text"
+               class="number"
+               id="pphi"
+               value="0"
+               onchange="pphi0Changed()">
+          </td>
+        </tr>
+      </table>
+
+      <table class="twoCol">
+        <tr>
+          <td align="right" title="Eddy forces">F<sup>eddy</sup></td>
+          <td><input
+                 type="text"
+                 class="number"
+                 id="fEddy"
+                 value="0"
+                 onchange="fEddyChanged()"/>
+            </td>
+          <td align="right" title="Eddy forces">&tau;<sup>eddy</sup></td>
+          <td>
+            <input
+                 type="text"
+                 class="number"
+                 id="tEddy"
+                 value="0"
+               onchange="tEddyChanged()"/>
+          </td>
+        </tr>
+        <tr>
+          <!--td align="right">Force friction:</td-->
+          <td align="right" title="Table friction">&mu;<sub>t</sub></td>
+          <td><input
+                 type="text"
+                 class="number"
+                 id="fFriction"
+                 value="0"
+                 onchange="fFrictionChanged()"/>
+          </td>
+          <td align="right" title="Table friction">&mu;~<sub>t</sub></td>
+          <td>
+            <input
+                 type="text"
+                 class="number"
+                 id="tFriction"
+                 value="0"
+                 onchange="tFrictionChanged()"/>
+          </td>
+        </tr>
+        <tr>
+          <!--td align="right">&mu;<sub>m</sub>:</td-->
+          <td colSpan="2" align="right" title="friction">&mu;<sub>sphere</sub></td>
+          <td><input
+                 type="text"
+                 class="number"
+                 id="fSphereFriction"
+                 value="0.005"
+                 onchange="fSphereFrictionChanged()"/>
+          </td>
+        </tr>
+        <tr>
+          <td colSpan="2" align="right">Collisions</td>
+          <td><select
+                 id="collisionType"
+                 value="1"
+                 onchange="collisionTypeChanged()">
+              <option value="0" selected="selected">Elastic</option>
+              <option value="1">Inelastic</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td colSpan="2" align="right" title="simulation speed">dt</td>
+          <td colSpan="2"><input
+                 type="text"
+                 class="number"
+                 id="simSpeed"
+                 onchange="simSpeedChanged()"
+                 value="2.9"
+                 step="1"/>x10<sup>-4</sup>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="6" align="center">
+            <label>
+              <input
+                 type="checkbox"
+                 id="updateP"
+                 onclick="transRotClicked()"
+                 onfocus="removeFocus()"
+                 checked>Translate
+            </label>
+            <label>
+              <input
+                 type="checkbox"
+                 id="updateM"
+                 onclick="transRotClicked()"
+                 onfocus="removeFocus()"
+                 checked>Rotate<br>
+            </label>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!--------------------------------------------------------->
+    <!-- Control buttons -->
+    <!--------------------------------------------------------->
+    <div id="controls" class="controls">      
+      <button
+         type="button"
+         class="cbutton"
+         onclick="zoomIn()"
+         onfocus="removeFocus()"
+         title="zoom in (+)">
+        <font size="6"><i class="fa fa-search-plus"></i></font></button>
+      <br>
+      <button
+         type="button"
+         class="cbutton"
+         onclick="zoomOut()"
+         onfocus="removeFocus()"
+         title="zoom out (-)">
+        <font size="6"><i class="fa fa-search-minus"></i></font></button>
+      <br>
+      <button
+         type="button"
+         class="cbutton"
+         onclick="exportLog()"
+         onfocus="removeFocus()"
+         title="save log file (s)">
+        <font size="6"><i class="fa fa-floppy-o"></i></font></button>
+      <br>
+      <br>
+
+      <button
+         type="button"
+         class="cbutton"
+         id="reset"
+         onclick="resetClicked()"
+         onfocus="removeFocus()"
+         title="reset position (r)">
+        <font size="6"><i class="fa fa-refresh"></i></font></button>
+      <br>
+      <button
+         type="button"
+         class="cbutton"
+         id="play"
+         onclick="toggleAnimate()"
+         onfocus="removeFocus()"
+         title="play/pause animation (spacebar)">
+        <font size="6"><i class="fa fa-play"></i></font></button>
+
+    </div>
+    
+    <div id="logo" class="logo">
+      &nbsp;Mag<i>Phyx</i>&nbsp;
+    </div>
+
+
+  </body>
+</html>
