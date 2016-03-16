@@ -806,14 +806,22 @@ function updateMoment(rk) {
   freeDipole.av = rk.omega;
 
   if (sign(oldTheta) != sign(newTheta)) {
+    event("phi = 0");
     debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
     debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
   }
 }
 
 function updatePosition(p, v) {
+  var old_theta = freeDipole.theta();
+
   freeDipole.p = p;
   freeDipole.v = v;
+
+  var new_theta = freeDipole.theta();
+  if (sign(old_theta) != sign(new_theta)) {
+    event("theta = 0");
+  }
 }
 
 // Assumes forces are up-to-date.
@@ -917,7 +925,7 @@ function updatePositions() {
           var newv = mult(refln, length(freeDipole.v));
           // Fire event BEFORE the position and vector are updated so
           // we get velocity values before the collision
-          event();
+          event("collision");
           updatePosition(freeDipole.p, newv);
         } else {
           // inelastic collision - really should set v to something meaningful
@@ -925,7 +933,7 @@ function updatePositions() {
           var newp = add(freeDipole.p, mult(dx, qt));
           // Fire event BEFORE the position and vector are updated so
           // we get velocity values before the collision
-          event();
+          event("collision");
           updatePosition(newp, newv);
         }
         // debugValues.v_at_collision = length(rk.v).toFixed(5);
@@ -956,29 +964,28 @@ function updatePositions() {
   updateDebug(freeDipole);
 }
 
-function event() {
+function event(eventType) {
   numEvents++;
   debugValues.num_events = numEvents;
 
-  plot.push(vec4(freeDipole.theta(), freeDipole.phi(), 0, 1));
-  updateLog();
+  if (eventType == "collision") {
+    plot.push(vec4(freeDipole.theta(), freeDipole.phi(), 0, 1));
+  }
+  updateLog(eventType);
 }
 
 function resetLog() {
-  log = "";
+  log = "Event type,";
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
     var label = getLogLabel(property);
     log += label + ",";
   }
   log += "\n";
-
-  // log = "event, t, r, theta, alpha, dr/dt, d(theta)/dt, d(alpha)/dt, |v|, U, T, R, E\n";
-  // log = "event, t, x, y, alpha, dx/dt, dy/dt, d(alpha)/dt, |v|, U, T, R, E\n";
-  // updateLog(LOG_INITIAL);
 }
 
-function updateLog(event) {
+function updateLog(eventType) {
+  log += eventType + ",";
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
     var value = "";
