@@ -455,6 +455,7 @@ function renderAVArrow(dipole, w, color) {
 
   var mag = 0.5 * Math.abs(w);
   var deg = Math.min(330, 360 * mag);
+  if (deg < 5) return true;
 
   pushMatrix();
   // get in position
@@ -794,16 +795,19 @@ function isTouching(p0, p1) {
   return (Math.abs(length(subtract(p0, p1)) - D) < EPSILON);
 }
 
+function sign(d) {
+  return (d < 0) ? -1 : (d > 0) ? 1 : 0;
+}
+
 function updateMoment(rk) {
   var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
   var newTheta = rk.theta;
   freeDipole.m = vec3(Math.cos(rk.theta), Math.sin(rk.theta));
   freeDipole.av = rk.omega;
 
-  if ((oldTheta < 0 && newTheta > 0) ||
-      (oldTheta > 0 && newTheta < 0)) {
-    // debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
-    // debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
+  if (sign(oldTheta) != sign(newTheta)) {
+    debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
+    debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
   }
 }
 
@@ -1702,6 +1706,10 @@ function reset() {
 
   freeDipole.resetE0();
 
+  // Update debug values
+  F(fixedDipole, freeDipole, true);
+  T(fixedDipole, freeDipole, true);
+
   updateP = document.getElementById("updateP").checked;
   updateM = document.getElementById("updateM").checked;
   showPath = document.getElementById("showPath").checked;
@@ -1879,6 +1887,10 @@ window.onload = function init() {
                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                  collisionType:"0", updateP:true, updateM:true,
                  showPath:false };
+  demos.toyota = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
+                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.5,
+                    collisionType:"1", updateP:true, updateM:true,
+                    showPath:false };
   demoChanged();
 
   reset();

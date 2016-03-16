@@ -65,14 +65,14 @@ ForceArrow.prototype.render = function(p, v, s, color, outsideCircle, thin) {
     gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
     gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
     popMatrix();
-  }
 
-  pushMatrix();
-  mvMatrix = mult(mvMatrix, translate(Math.max(0, mag-this.arrowWidth), 0, 0));
-  mvMatrix = mult(mvMatrix, scalem(thin, thin, 1));
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.drawArrays(gl.TRIANGLES, 4, 3);
-  popMatrix();
+    pushMatrix();
+    mvMatrix = mult(mvMatrix, translate(Math.max(0, mag-this.arrowWidth), 0, 0));
+    mvMatrix = mult(mvMatrix, scalem(thin, thin, 1));
+    gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
+    gl.drawArrays(gl.TRIANGLES, 4, 3);
+    popMatrix();
+  }
 
   popMatrix();
 
