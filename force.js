@@ -1281,7 +1281,7 @@ function renderDebug() {
         // }
         if (!logEntrySet.has(property) && verboseDebug) {
           var label = getLabel(property);
-          html += "<tr>";
+          html += "<tr style=\"font-size:12px\">";
           html += "<td>" + label + ":</td>";
           html += "<td>" + debugValues[property] + "</td>";
           html += "</tr>";

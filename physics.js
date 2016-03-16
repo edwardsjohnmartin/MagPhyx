@@ -106,7 +106,11 @@ function T(di, dj, applyFriction) {
         var F12 = F(di, dj, false);
         var f_m = mult(v_hat, -mu_m * Math.abs(dot(F12, r_hat)));
         var tau_m = mult(cross(mult(-1, r_hat), f_m), 0.5);
-        debugValues.f_m = f_m;
+        debugValues.v_t = vecString(v_t, 2);
+        debugValues.v_hat = vecString(v_hat, 2);
+        debugValues.r_hat = vecString(r_hat, 2);
+        debugValues.f_m = vecString(f_m, 2);
+        debugValues.tau_m = vecString(tau_m, 2);
         t = add(t, tau_m);
       }
     }
