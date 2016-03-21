@@ -1,3 +1,6 @@
+// TODO: phi = beta events
+//       beta plot
+
 "use strict";
 
 // diameter
@@ -118,10 +121,10 @@ var showCircles = true;
 // var showOutlineMode = false;
 var showPath = false;
 
-// var logEntries = [ "t", "num_collisions", "r", "theta", "phi", "pr", "ptheta",
-//                    "pphi", "U", "T", "R", "E", "dE" ];
-var logEntries = [ "t", "num_events", "r", "theta", "phi", "pr", "ptheta",
-                   "pphi", "E", "dE" ];
+var logEntries = [
+  "num_events", "event_type", "t",
+  "r", "theta", "phi", "pr", "ptheta", "pphi",
+  "E", "dE" ];
 var logEntrySet = new Set(logEntries);
 
 var showDebug = true;
@@ -133,6 +136,8 @@ var DebugLabel = function(name, label) {
 }
 
 var id2label = new Object();
+// id2label["event_type"] = "event type";
+id2label["event_type"] = "type";
 id2label["theta"] = "&theta;";
 id2label["phi"] = "&phi;";
 id2label["pr"] = "p<sub>r</sub>";
@@ -167,6 +172,7 @@ id2label["time_step"] = "&Delta;t";
 
 var id2logLabel = new Object();
 id2logLabel["num_events"] = "n";
+id2logLabel["event_type"] = "event type";
 id2logLabel["elapsed_time"] = "t";
 
 // var labeled = new Set();
@@ -713,7 +719,13 @@ function alpha(p, v, theta, alphaValue, dt) {
   return ret;
 }
 
-function rk4(x, v, theta, omega, dt, m) {
+// function rk4(x, v, theta, omega, dt) {//, m) {
+function rk4(dipole, dt) {//, m) {
+  var x = dipole.p;
+  var v = dipole.v;
+  var theta = dipole.phi();
+  var omega = dipole.av;
+
   // Returns final (position, velocity) tuple after
   // time dt has passed.
 
@@ -781,8 +793,10 @@ function computeIntersection(c0, c1, dx) {
   var qa = xw*xw + yw*yw;
   var qb = 2 * (x1*xw-x0*xw) + 2 * (y1*yw-y0*yw);
   var qc = x1*x1-2*x1*x0+x0*x0 + y1*y1-2*y1*y0+y0*y0 - D*D;
-  var qt0 = (-qb + Math.sqrt(qb*qb - 4*qa*qc)) / (2 * qa);
-  var qt1 = (-qb - Math.sqrt(qb*qb - 4*qa*qc)) / (2 * qa);
+  var disc = qb*qb - 4*qa*qc; // discriminant
+  if (disc < 0) return NaN;
+  var qt0 = (-qb + Math.sqrt(disc)) / (2 * qa);
+  var qt1 = (-qb - Math.sqrt(disc)) / (2 * qa);
   var qt = Math.min(qt0, qt1);
   if (qt < 0) {
     qt = Math.max(qt0, qt1);
@@ -799,6 +813,11 @@ function sign(d) {
   return (d < 0) ? -1 : (d > 0) ? 1 : 0;
 }
 
+function isZeroCrossing(a, b) {
+  // Return true if we cross zero or if we move from non-zero to zero.
+  return (sign(a) == -sign(b)) || (sign(a) != 0 && sign(b) == 0);
+}
+
 function updateMoment(rk) {
   var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
   var newTheta = rk.theta;
@@ -806,7 +825,7 @@ function updateMoment(rk) {
   freeDipole.av = rk.omega;
 
   if (sign(oldTheta) != sign(newTheta)) {
-    event("phi = 0");
+    // event("phi = 0");
     debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
     debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
   }
@@ -819,20 +838,21 @@ function updatePosition(p, v) {
   freeDipole.v = v;
 
   var new_theta = freeDipole.theta();
-  if (sign(old_theta) != sign(new_theta)) {
-    event("theta = 0");
-  }
+  // if (sign(old_theta) != sign(new_theta)) {
+  //   event("theta = 0");
+  // }
 }
 
 // Assumes forces are up-to-date.
 function updatePositions() {
+  var oldFreeDipole = freeDipole.copy();
+
+  var oldElapsedTime = elapsedTime;
   var dt = simSpeed * 1/10000;
   elapsedTime += dt;
 
   // 4th order runge-kutta
-  var rk = rk4(freeDipole.p, freeDipole.v,
-               Math.atan2(freeDipole.m[1], freeDipole.m[0]), freeDipole.av,
-               dt, freeDipole.m);
+  var rk = rk4(freeDipole, dt);
 
   //----------------------------------------
   // torque
@@ -846,7 +866,8 @@ function updatePositions() {
   // force
   //----------------------------------------
 
-  if (updateP && !freeDipole.fixed) {
+  var fireCollisionEvent = false;
+  if (updateP) {
     var c0 = fixedDipole.p;
     var c1 = freeDipole.p;
 
@@ -854,8 +875,6 @@ function updatePositions() {
     var R10 = subtract(c0, c1);
     // var touching = Math.abs(length(R01) - D) < 0.00000001;
     var touching = isTouching(c0, c1);
-
-    var dx = subtract(rk.p, freeDipole.p);
 
     if (!touching || dot(rk.v, mult(R01, -1)) < 0) {
       // We're not touching or we're traveling away from the fixed dipole
@@ -870,36 +889,20 @@ function updatePositions() {
 
       // dist will be the closest approach of c1 to c0.
       // If the shadow of R10 onto dx (using dot product) is either negative
-      var dist;
-      var shadow = dot(R10, dx) / length(dx);
-      if (shadow > length(dx)) {
-        // c1 won't pass c0, so find the ending point of c1.
-        // dist = length(subtract(c0, add(c1, dx)));
-        dist = length(subtract(c0, rk.p));
-      } else if (shadow < 0) {
-        // c1 is traveling away from c0, so find the ending point
-        dist = length(subtract(c0, rk.p));
-      } else {
-        // c1 will pass c0, so find the distance at closest approach
-        dist = length(cross(R10, dx)) / length(dx);
-      }
+      var dx = subtract(rk.p, freeDipole.p);
+      var qt = computeIntersection(c0, c1, dx);
 
-      if (dist < D) {
-        // c1 will collide with c0. 
-        var qt = computeIntersection(c0, c1, dx);
+      if (qt > 0 && qt <= 1) {
+        // A collision will occur in this time step
         if (collisionType == ELASTIC) {
           elapsedTime -= dt;
           var half = 0.5 * simSpeed * 1/10000;
           var done = false;
           dt = half;
           var iterations = 0;
-          // Binary search for a really close hit
+          // Use binary search to find a really close hit
           while (!done && iterations < 100) {
-            var theta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
-            var newrk = rk4(
-              freeDipole.p, freeDipole.v,
-              theta, freeDipole.av,
-              dt, freeDipole.m);
+            var newrk = rk4(freeDipole, dt);
             
             half /= 2;
             if (length(subtract(newrk.p, fixedDipole.p)) < D) {
@@ -907,8 +910,9 @@ function updatePositions() {
               dt -= half;
             } else {
               // no intersection
-              updateMoment(newrk);
-              updatePosition(newrk.p, newrk.v);
+              // TODO: bug here: what if there are multiple zero crossings?
+              freeDipole.updateFromRK(newrk, updateP, updateM);
+              oldElapsedTime = elapsedTime;
               elapsedTime += dt;
               dt = half;
             }
@@ -925,17 +929,19 @@ function updatePositions() {
           var newv = mult(refln, length(freeDipole.v));
           // Fire event BEFORE the position and vector are updated so
           // we get velocity values before the collision
-          event("collision");
+          // event("collision");
           updatePosition(freeDipole.p, newv);
+          console.log("dist3 = " + freeDipole.r());
         } else {
           // inelastic collision - really should set v to something meaningful
           var newv = vec3(0, 0, 0);
           var newp = add(freeDipole.p, mult(dx, qt));
           // Fire event BEFORE the position and vector are updated so
           // we get velocity values before the collision
-          event("collision");
+          // event("collision");
           updatePosition(newp, newv);
         }
+        fireCollisionEvent = true;
         // debugValues.v_at_collision = length(rk.v).toFixed(5);
         // debugValues.t_at_collision = elapsedTime.toFixed(5);
         // numCollisions++;
@@ -961,21 +967,38 @@ function updatePositions() {
     }
   }
 
+  if (fireCollisionEvent) {
+    event("collision", oldFreeDipole, freeDipole, oldElapsedTime);
+  }
+  if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
+    event("theta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  }
+  if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
+    event("phi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  }
+  if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
+    event("ptheta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  }
+  if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
+    event("pphi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  }
+
   updateDebug(freeDipole);
 }
 
-function event(eventType) {
+function event(eventType, oldDipole, newDipole, oldElapsedTime) {
   numEvents++;
   debugValues.num_events = numEvents;
+  debugValues.event_type = eventType;
 
   if (eventType == "collision") {
-    plot.push(vec4(freeDipole.theta(), freeDipole.phi(), 0, 1));
+    plot.push(vec4(oldDipole.theta(), oldDipole.phi(), 0, 1));
   }
-  updateLog(eventType);
+  updateLog(eventType, oldDipole, newDipole, oldElapsedTime);
 }
 
 function resetLog() {
-  log = "Event type,";
+  log = "";
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
     var label = getLogLabel(property);
@@ -984,80 +1007,55 @@ function resetLog() {
   log += "\n";
 }
 
-function updateLog(eventType) {
-  log += eventType + ",";
+function updateLog(eventType, oldDipole, newDipole, oldElapsedTime) {
+  // In the case of a zero crossing, interpolate
+  var t = 0;
+  if (eventType == "theta = 0") {
+    t = ((-oldDipole.theta())/(newDipole.theta()-oldDipole.theta()));
+  } else if (eventType == "phi = 0") {
+    t = ((-oldDipole.phi())/(newDipole.phi()-oldDipole.phi()));
+  } else if (eventType == "ptheta = 0") {
+    t = ((-oldDipole.ptheta())/(newDipole.ptheta()-oldDipole.ptheta()));
+  } else if (eventType == "pphi = 0") {
+    t = ((-oldDipole.pphi())/(newDipole.pphi()-oldDipole.pphi()));
+  }
+  var dipole = oldDipole.copy();
+  // var dipole = newDipole.copy();
+  console.log("x = " + newDipole.r());
+  dipole.interpolate(t, oldDipole, newDipole);
+  console.log("y = " + dipole.r());
+
+  var logValues = new Object();
+  logValues.num_events = numEvents.toFixed(4);
+  logValues.event_type = eventType;
+  logValues.t = elapsedTime.toFixed(4);
+
+  logValues.r = dipole.r().toFixed(4);
+  logValues.theta = degrees(dipole.theta()).toFixed(4);
+  logValues.phi = degrees(dipole.phi()).toFixed(4);
+
+  logValues.pr = dipole.pr().toFixed(4);
+  logValues.ptheta = dipole.ptheta().toFixed(4);
+  logValues.pphi = dipole.pphi().toFixed(4);
+
+  logValues.E = dipole.E().toFixed(8);
+  logValues.dE = (dipole.E()-dipole.E0).toFixed(8);
+
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
     var value = "";
-    if (debugValues.hasOwnProperty(property)) {
-      value = debugValues[property];
+    if (logValues.hasOwnProperty(property)) {
+      value = logValues[property];
     }
+    
     log += value + ",";
   }
   log += "\n";
-
-  // var dipole = freeDipole;
-  // var rvec = subtract(dipole.p, fixedDipole.p);
-  // // Number of digits
-  // var m = 6;
-
-  // var U_ = U(dipole);
-  // var T_ = Trans(dipole);
-  // var R_ = R(dipole);
-  // var E_ = U_ + T_ + R_;
-
-  // var p = dipole.p;
-  // var v = dipole.v;
-  // var r = length(rvec);
-  // // d(theta)/dt = (x/r^2)dy/dt – (y/r^2)dx/dt
-  // var dTheta = p[0]/(r*r) * v[1] - p[1]/(r*r) * v[0];
-
-  // // event, t, x, y, alpha, dx/dt, dy/dt, d(alpha)/dt, |v|, U, T, R, E
-
-  // // event
-  // log += event + ",";
-  // // t
-  // log += elapsedTime.toFixed(m) + ",";
-  // // x
-  // log += p[0].toFixed(m) + ",";
-  // // y
-  // log += p[1].toFixed(m) + ",";
-  // // // r
-  // // log += r.toFixed(m) + ",";
-  // // // theta - angle of position vector
-  // // log += Math.atan2(p[1], p[0]).toFixed(m) + ",";
-  // // alpha
-  // log += Math.atan2(dipole.m[1], dipole.m[0]).toFixed(m) + ",";
-  // // // dr/dt
-  // // log += "\"" + ??? + "\","
-  // // // d(theta)/dt
-  // // log += "\"" + dTheta + "\",";
-  // // dx/dt
-  // log += v[0].toFixed(m) + ","
-  // // dy/dt
-  // log += v[1].toFixed(m) + ","
-  // // d(alpha)/dt
-  // log += dipole.av.toFixed(m) + ","
-  // // |v|
-  // log += length(dipole.v).toFixed(m) + ","
-  // // U
-  // log += U_.toFixed(m) + ","
-  // // T
-  // log += T_.toFixed(m) + ",";
-  // // R
-  // log += R_.toFixed(m) + ",";
-  // // E
-  // log += E_.toFixed(m);
-
-  // log += "\n";
 }
 
 function exportLog() {
   window.open('data:text/csv;charset=utf-8,' + escape(log));
 }
-
-// var button = document.getElementById('b');
-// button.addEventListener('click', exportToCsv);
 
 function vecString(v, fixed) {
   return v.map(function(n) { return n.toFixed(fixed) });
@@ -1818,6 +1816,45 @@ function demoChanged() {
     document.getElementById(setting).checked = demo[setting];
   });
   reset();
+
+  var demoName = document.getElementById("demos").value;
+  setCookie("demo", demoName, 365);
+}
+
+//------------------------------------------------------------
+// Cookies
+//------------------------------------------------------------
+function setCookie(cookieName, cookieValue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+d.toUTCString();
+  document.cookie = cookieName + "=" + cookieValue + "; " + expires;
+}
+
+function getCookie(cookieName) {
+  var name = cookieName + "=";
+  var ca = document.cookie.split(';');
+  for(var i=0; i<ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1);
+    if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+  }
+  return "";
+}
+
+function checkDemoCookie() {
+  var demo = getCookie("demo");
+  if (demo != "") {
+    var demoSelect = document.getElementById("demos");
+    for (var i = 0; i < demoSelect.length; ++i){
+      if (demoSelect.options[i].value == demo){
+        demoSelect.value = demo;
+      }
+    }
+  } else {
+    demo = document.getElementById("demos").value;
+    setCookie("demo", demo, 365);
+  }
 }
 
 window.onload = function init() {
@@ -1898,6 +1935,12 @@ window.onload = function init() {
                     gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.5,
                     collisionType:"1", updateP:true, updateM:true,
                     showPath:false };
+  demos.bmw = { r:2, theta:2, phi:-30, pr:0, ptheta:0, pphi:0,
+                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                    collisionType:"0", updateP:true, updateM:true,
+                    showPath:false };
+
+  checkDemoCookie();
   demoChanged();
 
   reset();
