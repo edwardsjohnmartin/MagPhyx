@@ -51,6 +51,15 @@ Dipole.prototype.interpolate = function(t, src, target) {
   this.av = src.av, t*(target.av-src.av);
 }
 
+Dipole.interpolateZeroCrossing = function(src, target, f) {
+  var srcValue = f(src);
+  var targetValue = f(target);
+  var t = (-srcValue) / (targetValue - srcValue);
+  var ret = src.copy();
+  ret.interpolate(t, src, target);
+  return ret;
+}
+
 Dipole.prototype.E = function() {
   var U_ = U(this);
   var T_ = Trans(this);
@@ -76,6 +85,12 @@ Dipole.prototype.theta = function() {
 
 Dipole.prototype.phi = function() {
   return Math.atan2(this.m[1], this.m[0]);
+}
+
+Dipole.prototype.beta = function() {
+  var v = B(this.p);
+  var vtheta = Math.atan2(v[1], v[0]);
+  return this.phi() - vtheta;
 }
 
 Dipole.prototype.dr = function() {

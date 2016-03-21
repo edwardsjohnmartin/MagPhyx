@@ -20,13 +20,10 @@ var mesh2Obj = D/2;
 var fieldTexCoord2Obj = D * 13.0;
 
 var log = "";
-// var LOG_COLLISION = "collision";
-// var LOG_INITIAL = "initial";
 
 var elapsedTime = 0;
 var animate = false;
 
-// var numCollisions = 0;
 var numEvents = 0;
 
 var updateP = true;
@@ -828,31 +825,6 @@ function isZeroCrossing(a, b) {
   return (sign(a) == -sign(b)) || (sign(a) != 0 && sign(b) == 0);
 }
 
-// function updateMoment(rk) {
-//   var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
-//   var newTheta = rk.theta;
-//   freeDipole.m = vec3(Math.cos(rk.theta), Math.sin(rk.theta));
-//   freeDipole.av = rk.omega;
-
-//   if (sign(oldTheta) != sign(newTheta)) {
-//     // event("phi = 0");
-//     debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
-//     debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
-//   }
-// }
-
-// function updatePosition(p, v) {
-//   var old_theta = freeDipole.theta();
-
-//   freeDipole.p = p;
-//   freeDipole.v = v;
-
-//   var new_theta = freeDipole.theta();
-//   // if (sign(old_theta) != sign(new_theta)) {
-//   //   event("theta = 0");
-//   // }
-// }
-
 function updatePositions() {
   var oldFreeDipole = freeDipole.copy();
 
@@ -863,18 +835,11 @@ function updatePositions() {
   // 4th order runge-kutta
   var rk = rk4(freeDipole, dt);
 
-  var fireCollisionEvent = false;
   if (!updateP) {
     // Not updating position. Update only moment.
     freeDipole.updateFromRK(rk, updateP, updateM);
   } else {
     // Handle separately in case there are collisions.
-
-    // var c0 = fixedDipole.p;
-    // var c1 = freeDipole.p;
-    // var R = subtract(freeDipole.p, fixedDipole.p);
-    // var R01 = subtract(c1, c0);
-    // var R10 = subtract(c0, c1);
     var touching = isTouching(fixedDipole.p, freeDipole.p);
 
     if (touching && dot(rk.v, freeDipole.p) < 0) {
@@ -901,9 +866,8 @@ function updatePositions() {
         // No collision
         freeDipole.updateFromRK(rk, updateP, updateM);
       } else {
-        // A collision will occur in this time step
-
-        // Use binary search to find a really close hit
+        // A collision will occur in this time step.
+        // Use binary search to find a really close hit.
         elapsedTime -= dt;
         var done = false;
         var iterations = 0;
@@ -927,6 +891,7 @@ function updatePositions() {
 
         // At this point freeDipole is on the surface and still heading
         // toward fixedDipole.
+        event("collision", freeDipole);
 
         if (collisionType == ELASTIC) {
           // specular reflection
@@ -947,39 +912,55 @@ function updatePositions() {
             newp, newv, rk.theta, rk.omega,
             updateP, updateM);
         }
-        fireCollisionEvent = true;
       }
     }
   }
 
-  // if (fireCollisionEvent) {
-  //   event("collision", oldFreeDipole, freeDipole, oldElapsedTime);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-  //   event("theta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-  //   event("phi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
-  //   event("ptheta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
-  //   event("pphi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  // }
-
   updateDebug(freeDipole);
+
+  // Log zero crossings
+  if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.theta();});
+    event("theta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.phi();});
+    event("phi = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.beta();});
+    event("beta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.pr();});
+    event("pr = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
+    event("ptheta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.pphi();});
+    event("pphi = 0", logDipole);
+  }
 }
 
-function event(eventType, oldDipole, newDipole, oldElapsedTime) {
+function event(eventType, dipole) {
   numEvents++;
   debugValues.num_events = numEvents;
   debugValues.event_type = eventType;
 
   if (eventType == "collision") {
-    plot.push(vec4(oldDipole.theta(), oldDipole.phi(), 0, 1));
+    // plot.push(vec4(dipole.theta(), dipole.phi(), 0, 1));
+    plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
   }
-  updateLog(eventType, oldDipole, newDipole, oldElapsedTime);
+  updateLog(eventType, dipole);
 }
 
 function resetLog() {
@@ -992,37 +973,17 @@ function resetLog() {
   log += "\n";
 }
 
-function updateLog(eventType, oldDipole, newDipole, oldElapsedTime) {
-  // In the case of a zero crossing, interpolate
-  var t = 0;
-  if (eventType == "theta = 0") {
-    t = ((-oldDipole.theta())/(newDipole.theta()-oldDipole.theta()));
-  } else if (eventType == "phi = 0") {
-    t = ((-oldDipole.phi())/(newDipole.phi()-oldDipole.phi()));
-  } else if (eventType == "ptheta = 0") {
-    t = ((-oldDipole.ptheta())/(newDipole.ptheta()-oldDipole.ptheta()));
-  } else if (eventType == "pphi = 0") {
-    t = ((-oldDipole.pphi())/(newDipole.pphi()-oldDipole.pphi()));
-  }
-  var dipole = oldDipole.copy();
-  // var dipole = newDipole.copy();
-  // console.log("x = " + newDipole.r());
-  dipole.interpolate(t, oldDipole, newDipole);
-  // console.log("y = " + dipole.r());
-
+function updateLog(eventType, dipole) {
   var logValues = new Object();
   logValues.num_events = numEvents.toFixed(4);
   logValues.event_type = eventType;
   logValues.t = elapsedTime.toFixed(4);
-
   logValues.r = dipole.r().toFixed(4);
   logValues.theta = degrees(dipole.theta()).toFixed(4);
   logValues.phi = degrees(dipole.phi()).toFixed(4);
-
   logValues.pr = dipole.pr().toFixed(4);
   logValues.ptheta = dipole.ptheta().toFixed(4);
   logValues.pphi = dipole.pphi().toFixed(4);
-
   logValues.E = dipole.E().toFixed(8);
   logValues.dE = (dipole.E()-dipole.E0).toFixed(8);
 
@@ -1072,7 +1033,8 @@ function updateDebug(dipole) {
   // debugValues.U = U_.toFixed(4);
   // debugValues.T = T_.toFixed(4);
   // debugValues.R = R_.toFixed(4);
-  debugValues.E = E_.toFixed(8);
+  // debugValues.E = E_.toFixed(8);
+  debugValues.E = dipole.E().toFixed(8);
   debugValues.dE = (E_-dipole.E0).toFixed(8);
 
   // debugValues.v = dipole.v.map(function(n) { return n.toFixed(2) });
