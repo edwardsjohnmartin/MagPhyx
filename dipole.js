@@ -44,19 +44,40 @@ Dipole.prototype.copy = function() {
   return d;
 }
 
-Dipole.prototype.interpolate = function(t, src, target) {
-  this.p = add(src.p, mult(t, subtract(target.p, src.p)));
-  this.m = add(src.m, mult(t, subtract(target.m, src.m)));
-  this.v = add(src.v, mult(t, subtract(target.v, src.v)));
-  this.av = src.av, t*(target.av-src.av);
-}
+// Dipole.prototype.interpolate = function(t, src, target) {
+//   this.p = add(src.p, mult(t, subtract(target.p, src.p)));
+//   this.m = add(src.m, mult(t, subtract(target.m, src.m)));
+//   this.v = add(src.v, mult(t, subtract(target.v, src.v)));
+//   this.av = src.av + t*(target.av-src.av);
+// }
 
 Dipole.interpolateZeroCrossing = function(src, target, f) {
   var srcValue = f(src);
   var targetValue = f(target);
   var t = (-srcValue) / (targetValue - srcValue);
   var ret = src.copy();
-  ret.interpolate(t, src, target);
+  // ret.interpolate(t, src, target);
+
+  var r = src.r() + t * (target.r() - src.r());
+  var theta = src.theta() + t * (target.theta() - src.theta());
+  var phi = src.phi() + t * (target.phi() - src.phi());
+  var pr_ = src.pr() + t * (target.pr() - src.pr());
+  var ptheta = src.ptheta() + t * (target.ptheta() - src.ptheta());
+  var pphi = src.pphi() + t * (target.pphi() - src.pphi());
+
+  var x = r*Math.cos(theta);
+  var y = r*Math.sin(theta);
+
+  // console.log("1t = " + t + " pr = " + pr_ + " " + target.pr() + " " + src.pr());
+  ret.p = vec3(x*D, y*D, 0);
+  ret.m = vec3(Math.cos(phi), Math.sin(phi), 0);
+  ret.set_pr(pr_);
+  // console.log("2 " + ret.pr());
+  ret.set_ptheta(ptheta);
+  // console.log("2.5 " + ret.pr());
+  ret.set_pphi(pphi);
+  // console.log("3 " + ret.pr());
+
   return ret;
 }
 
@@ -98,17 +119,41 @@ Dipole.prototype.dr = function() {
   return dot(normalized(this.p), this.v);
 }
 
-Dipole.prototype.dtheta = function() {
+Dipole.prototype.set_dr = function(dr) {
   var u = cross(normalized(this.p), vec3(0, 0, -1));
-  return dot(u, this.v);
+  if (length(this.v) > 0) {
+    u = mult(u, dot(u, normalized(this.v)));
+    this.v = add(u, mult(normalized(this.p), dr));
+  }
+}
+
+Dipole.prototype.dtheta = function() {
+  var u = normalized(cross(normalized(this.p), vec3(0, 0, -1)));
+  return dot(this.v, u);
+}
+
+Dipole.prototype.set_dtheta = function(dtheta) {
+  var u = normalized(cross(normalized(this.p), vec3(0, 0, -1)));
+  u = mult(u, dtheta);
+  // rv is the radial component of the velocity
+  var rv = mult(normalized(this.p), dot(normalized(this.p), this.v));
+  this.v = add(rv, u);
 }
 
 Dipole.prototype.dphi = function() {
   return this.av;
 }
 
+Dipole.prototype.set_dphi = function(dphi) {
+  this.av = dphi;
+}
+
 Dipole.prototype.pr = function() {
   return this.dr();
+}
+
+Dipole.prototype.set_pr = function(pr) {
+  this.set_dr(pr);
 }
 
 Dipole.prototype.ptheta = function() {
@@ -116,34 +161,13 @@ Dipole.prototype.ptheta = function() {
   return this.dtheta() * r_ * r_;
 }
 
-Dipole.prototype.pphi = function() {
-  return this.dphi() / 10;
-}
-
-Dipole.prototype.set_dr = function(dr) {
-  var u = cross(normalized(this.p), vec3(0, 0, -1));
-  u = mult(u, dot(u, this.v));
-  this.v = add(u, mult(normalized(this.p), dr));
-}
-
-Dipole.prototype.set_dtheta = function(dtheta) {
-  var u = cross(normalized(this.p), vec3(0, 0, -1));
-  u = mult(u, dtheta);
-  var rv = mult(this.p, dot(normalized(this.p), this.v));
-  this.v = add(rv, u);
-}
-
-Dipole.prototype.set_dphi = function(dphi) {
-  this.av = dphi;
-}
-
-Dipole.prototype.set_pr = function(pr) {
-  this.set_dr(pr);
-}
-
 Dipole.prototype.set_ptheta = function(ptheta) {
   var r_ = this.r();
   this.set_dtheta(ptheta / (r_*r_));
+}
+
+Dipole.prototype.pphi = function() {
+  return this.dphi() / 10;
 }
 
 Dipole.prototype.set_pphi = function(pphi) {

@@ -122,7 +122,7 @@ var showPath = false;
 
 var logEntries = [
   "num_events", "event_type", "t",
-  "r", "theta", "phi", "pr", "ptheta", "pphi",
+  "r", "theta", "phi", "pr", "ptheta", "pphi", "beta",
   "E", "dE" ];
 var logEntrySet = new Set(logEntries);
 
@@ -923,31 +923,40 @@ function updatePositions() {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.theta();});
     event("theta = 0", logDipole);
+    // event("theta = 0", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.phi();});
+    // event("phi = 0 1", oldFreeDipole);
     event("phi = 0", logDipole);
+    // event("phi = 0 3", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.beta();});
+    // event("beta = 0 1", oldFreeDipole);
     event("beta = 0", logDipole);
+    // event("beta = 0 3", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.pr();});
+    // event("pr = 0 1", oldFreeDipole);
     event("pr = 0", logDipole);
+    // event("pr = 0 3", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
     event("ptheta = 0", logDipole);
+    // event("ptheta = 0", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.pphi();});
     event("pphi = 0", logDipole);
+    // event("pphi = 0", freeDipole);
   }
 }
 
@@ -984,6 +993,7 @@ function updateLog(eventType, dipole) {
   logValues.pr = dipole.pr().toFixed(4);
   logValues.ptheta = dipole.ptheta().toFixed(4);
   logValues.pphi = dipole.pphi().toFixed(4);
+  logValues.beta = dipole.beta().toFixed(4);
   logValues.E = dipole.E().toFixed(8);
   logValues.dE = (dipole.E()-dipole.E0).toFixed(8);
 
