@@ -8,12 +8,6 @@ var Dipole = function(p, m, fixed) {
   this.v = vec3(0, 0, 0);
   // angular velocity
   this.av = 0;
-  // force
-  this.F = vec3(0, 0, 0);
-  // torque
-  this.T = vec3(0, 0, 0);
-  this.F0 = this.F;
-  this.T0 = this.T;
 
   if (p[0] == 0 && p[1] == 0) {
     this.E0 = 0;
@@ -28,49 +22,24 @@ var Dipole = function(p, m, fixed) {
 }
 
 Dipole.prototype.updateFromRK = function(rk, updateP, updateM) {
-  this.update(rk.p, rk.v, rk.theta, rk.omega);
+  this.update(rk.p, rk.v, rk.theta, rk.omega, updateP, updateM);
 }
 
-Dipole.prototype.update = function(p, v, theta, omega, updateP, updateM) {
+Dipole.prototype.update = function(p, v, phi, omega, updateP, updateM) {
   if (updateP) {
     this.p = p;
     this.v = v;
   }
   if (updateM) {
-    this.m = vec3(Math.cos(theta), Math.sin(theta), 0);
+    this.m = vec3(Math.cos(phi), Math.sin(phi), 0);
     this.av = omega;
   }
-
-  // var old_theta = freeDipole.theta();
-
-  // freeDipole.p = p;
-  // freeDipole.v = v;
-
-  // var new_theta = freeDipole.theta();
-  // // if (sign(old_theta) != sign(new_theta)) {
-  // //   event("theta = 0");
-  // // }
-
-  // var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
-  // var newTheta = rk.theta;
-  // freeDipole.m = vec3(Math.cos(rk.theta), Math.sin(rk.theta));
-  // freeDipole.av = rk.omega;
-
-  // if (sign(oldTheta) != sign(newTheta)) {
-  //   // event("phi = 0");
-  //   debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
-  //   debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
-  // }
 }
 
 Dipole.prototype.copy = function() {
   var d = new Dipole(this.p, this.m, this.fixed);
   d.v = this.v;
   d.av = this.av;
-  d.F = this.F;
-  d.T = this.T;
-  d.F0 = this.F0;
-  d.T0 = this.T0;
   d.E0 = this.E0;
   return d;
 }
@@ -80,8 +49,6 @@ Dipole.prototype.interpolate = function(t, src, target) {
   this.m = add(src.m, mult(t, subtract(target.m, src.m)));
   this.v = add(src.v, mult(t, subtract(target.v, src.v)));
   this.av = src.av, t*(target.av-src.av);
-  this.F = add(src.F, mult(t, subtract(target.F, src.F)));
-  this.T = add(src.T, mult(t, subtract(target.T, src.T)));
 }
 
 Dipole.prototype.E = function() {
@@ -93,10 +60,6 @@ Dipole.prototype.E = function() {
 
 Dipole.prototype.resetE0 = function() {
   this.E0 = this.E();
-  // var U_ = U(this);
-  // var T_ = Trans(this);
-  // var R_ = R(this);
-  // this.E0 = U_ + T_ + R_;
 }
 
 Dipole.prototype.r = function() {

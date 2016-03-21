@@ -1,5 +1,7 @@
 // TODO: phi = beta events
 //       beta plot
+//       beta = phi - phi_m
+//       phi_m = angle of magnetic field
 
 "use strict";
 
@@ -664,11 +666,11 @@ function renderTexture() {
 };
 
 function updateForces(updateInitial) {
-  freeDipole.F = F(fixedDipole, freeDipole, true);
-  freeDipole.T = T(fixedDipole, freeDipole, true);
+  // freeDipole.F = F(fixedDipole, freeDipole, true);
+  // freeDipole.T = T(fixedDipole, freeDipole, true);
   if (updateInitial) {
-    freeDipole.F0 = freeDipole.F;
-    freeDipole.T0 = freeDipole.T;
+    // freeDipole.F0 = freeDipole.F;
+    // freeDipole.T0 = freeDipole.T;
     freeDipole.fixed = false;
     // freeDipole.v = vec3(0, 0, 0);
     // freeDipole.av = 0;
@@ -782,6 +784,14 @@ function rk4(dipole, dt) {//, m) {
 // Given a sphere c1 and translation dx, and given that c1 is not
 // intersecting c0, return the t parameter at which c1 will intersect c0.
 function computeIntersection(c0, c1, dx) {
+  // Find the distance a from the center of the fixed dipole
+  // to the displacement line.
+  //
+  //        dx  ____ c1+dx
+  //       ____/
+  //   c1 /_________ c0
+  //           R10
+
   // Change dx such that dipole runs into other dipole.
   var x0 = c0[0];
   var y0 = c0[1];
@@ -818,32 +828,31 @@ function isZeroCrossing(a, b) {
   return (sign(a) == -sign(b)) || (sign(a) != 0 && sign(b) == 0);
 }
 
-function updateMoment(rk) {
-  var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
-  var newTheta = rk.theta;
-  freeDipole.m = vec3(Math.cos(rk.theta), Math.sin(rk.theta));
-  freeDipole.av = rk.omega;
+// function updateMoment(rk) {
+//   var oldTheta = Math.atan2(freeDipole.m[1], freeDipole.m[0]);
+//   var newTheta = rk.theta;
+//   freeDipole.m = vec3(Math.cos(rk.theta), Math.sin(rk.theta));
+//   freeDipole.av = rk.omega;
 
-  if (sign(oldTheta) != sign(newTheta)) {
-    // event("phi = 0");
-    debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
-    debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
-  }
-}
+//   if (sign(oldTheta) != sign(newTheta)) {
+//     // event("phi = 0");
+//     debugValues.w_at_zero_crossing = freeDipole.av.toFixed(4);
+//     debugValues.time_at_zero_crossing = elapsedTime.toFixed(4);
+//   }
+// }
 
-function updatePosition(p, v) {
-  var old_theta = freeDipole.theta();
+// function updatePosition(p, v) {
+//   var old_theta = freeDipole.theta();
 
-  freeDipole.p = p;
-  freeDipole.v = v;
+//   freeDipole.p = p;
+//   freeDipole.v = v;
 
-  var new_theta = freeDipole.theta();
-  // if (sign(old_theta) != sign(new_theta)) {
-  //   event("theta = 0");
-  // }
-}
+//   var new_theta = freeDipole.theta();
+//   // if (sign(old_theta) != sign(new_theta)) {
+//   //   event("theta = 0");
+//   // }
+// }
 
-// Assumes forces are up-to-date.
 function updatePositions() {
   var oldFreeDipole = freeDipole.copy();
 
@@ -854,72 +863,72 @@ function updatePositions() {
   // 4th order runge-kutta
   var rk = rk4(freeDipole, dt);
 
-  //----------------------------------------
-  // torque
-  //----------------------------------------
-
-  if (updateM) {
-    updateMoment(rk);
-  }
-
-  //----------------------------------------
-  // force
-  //----------------------------------------
-
   var fireCollisionEvent = false;
-  if (updateP) {
-    var c0 = fixedDipole.p;
-    var c1 = freeDipole.p;
+  if (!updateP) {
+    // Not updating position. Update only moment.
+    freeDipole.updateFromRK(rk, updateP, updateM);
+  } else {
+    // Handle separately in case there are collisions.
 
-    var R01 = subtract(c1, c0);
-    var R10 = subtract(c0, c1);
-    // var touching = Math.abs(length(R01) - D) < 0.00000001;
-    var touching = isTouching(c0, c1);
+    // var c0 = fixedDipole.p;
+    // var c1 = freeDipole.p;
+    // var R = subtract(freeDipole.p, fixedDipole.p);
+    // var R01 = subtract(c1, c0);
+    // var R10 = subtract(c0, c1);
+    var touching = isTouching(fixedDipole.p, freeDipole.p);
 
-    if (!touching || dot(rk.v, mult(R01, -1)) < 0) {
-      // We're not touching or we're traveling away from the fixed dipole
-
-      // Find the distance a from the center of the fixed dipole
-      // to the displacement line.
-      //
-      //        dx  ____ c1+dx
-      //       ____/
-      //   c1 /_________ c0
-      //           R10
-
-      // dist will be the closest approach of c1 to c0.
-      // If the shadow of R10 onto dx (using dot product) is either negative
+    if (touching && dot(rk.v, freeDipole.p) < 0) {
+      // "Sliding" case.
+      // Spheres are touching and traveling towards each other.
+      // Translate in the tangential direction.
+      // var tangent = normalize(cross(R01, vec3(0, 0, 1)));
+      var tangent = normalize(cross(freeDipole.p, vec3(0, 0, 1)));
+      var newv = mult(tangent, dot(rk.v, tangent));
+      // newp_tangent is the new position if traveling
+      // in the tangent direction
+      var newp_tangent = add(freeDipole.p, mult(newv, dt));
+      // Traveling in the tangent direction will pull freeDipole off of
+      // fixedDipole, so pull freeDipole toward fixedDipole until they touch
+      var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
+      var newp = add(fixedDipole.p, u);
+      freeDipole.update(newp, newv, rk.theta, rk.omega, updateP, updateM);
+    } else {
+      // We're not touching or else we're traveling away from the fixed dipole
       var dx = subtract(rk.p, freeDipole.p);
-      var qt = computeIntersection(c0, c1, dx);
+      var qt = computeIntersection(fixedDipole.p, freeDipole.p, dx);
 
-      if (qt > 0 && qt <= 1) {
+      if (qt < 0 || qt > 1 || isNaN(qt)) {
+        // No collision
+        freeDipole.updateFromRK(rk, updateP, updateM);
+      } else {
         // A collision will occur in this time step
-        if (collisionType == ELASTIC) {
-          elapsedTime -= dt;
-          var half = 0.5 * simSpeed * 1/10000;
-          var done = false;
-          dt = half;
-          var iterations = 0;
-          // Use binary search to find a really close hit
-          while (!done && iterations < 100) {
-            var newrk = rk4(freeDipole, dt);
-            
-            half /= 2;
-            if (length(subtract(newrk.p, fixedDipole.p)) < D) {
-              // intersects
-              dt -= half;
-            } else {
-              // no intersection
-              // TODO: bug here: what if there are multiple zero crossings?
-              freeDipole.updateFromRK(newrk, updateP, updateM);
-              oldElapsedTime = elapsedTime;
-              elapsedTime += dt;
-              dt = half;
-            }
-            done = isTouching(c0, freeDipole.p);
-            ++iterations;
-          }
 
+        // Use binary search to find a really close hit
+        elapsedTime -= dt;
+        var done = false;
+        var iterations = 0;
+        while (!done && iterations < 100) {
+          dt /= 2;
+          var newrk = rk4(freeDipole, dt);
+          
+          if (length(subtract(newrk.p, fixedDipole.p)) < D) {
+            // Intersects. Don't update position, but rather cut the time
+            // step in half and retry.
+          } else {
+            // No intersection. Update position and try again.
+            // TODO: bug here: what if there are multiple zero crossings?
+            freeDipole.updateFromRK(newrk, updateP, updateM);
+            oldElapsedTime = elapsedTime;
+            elapsedTime += dt;
+          }
+          done = isTouching(fixedDipole.p, freeDipole.p);
+          ++iterations;
+        }
+
+        // At this point freeDipole is on the surface and still heading
+        // toward fixedDipole.
+
+        if (collisionType == ELASTIC) {
           // specular reflection
           var normal = normalize(subtract(freeDipole.p, fixedDipole.p));
           var l = normalize(mult(freeDipole.v, -1));
@@ -927,61 +936,37 @@ function updatePositions() {
           refln = mult(refln, normal);
           refln = normalize(subtract(refln, l));
           var newv = mult(refln, length(freeDipole.v));
-          // Fire event BEFORE the position and vector are updated so
-          // we get velocity values before the collision
-          // event("collision");
-          updatePosition(freeDipole.p, newv);
-          console.log("dist3 = " + freeDipole.r());
+          freeDipole.update(
+            freeDipole.p, newv, freeDipole.phi(), freeDipole.av,
+            updateP, updateM);
         } else {
           // inelastic collision - really should set v to something meaningful
           var newv = vec3(0, 0, 0);
           var newp = add(freeDipole.p, mult(dx, qt));
-          // Fire event BEFORE the position and vector are updated so
-          // we get velocity values before the collision
-          // event("collision");
-          updatePosition(newp, newv);
+          freeDipole.update(
+            newp, newv, rk.theta, rk.omega,
+            updateP, updateM);
         }
         fireCollisionEvent = true;
-        // debugValues.v_at_collision = length(rk.v).toFixed(5);
-        // debugValues.t_at_collision = elapsedTime.toFixed(5);
-        // numCollisions++;
-        // debugValues.num_collisions = numCollisions;
-      } else {
-        // no collision
-          // event();
-        updatePosition(rk.p, rk.v);
       }
-    } else {
-      // already touching
-      var tangent = normalize(cross(R01, vec3(0, 0, 1)));
-      var newv = mult(tangent, dot(rk.v, tangent));
-      // newp_tangent is the new position if traveling
-      // in the tangent direction
-      var newp_tangent = add(freeDipole.p, mult(newv, dt));
-      // Traveling in the tangent direction will pull c1 off of c0,
-      // so pull c1 toward c0 until they touch
-      var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
-      var newp = add(fixedDipole.p, u);
-      updatePosition(newp, newv);
-      // event();
     }
   }
 
-  if (fireCollisionEvent) {
-    event("collision", oldFreeDipole, freeDipole, oldElapsedTime);
-  }
-  if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-    event("theta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  }
-  if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-    event("phi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  }
-  if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
-    event("ptheta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  }
-  if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
-    event("pphi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
-  }
+  // if (fireCollisionEvent) {
+  //   event("collision", oldFreeDipole, freeDipole, oldElapsedTime);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
+  //   event("theta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
+  //   event("phi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
+  //   event("ptheta = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
+  //   event("pphi = 0", oldFreeDipole, freeDipole, oldElapsedTime);
+  // }
 
   updateDebug(freeDipole);
 }
@@ -1021,9 +1006,9 @@ function updateLog(eventType, oldDipole, newDipole, oldElapsedTime) {
   }
   var dipole = oldDipole.copy();
   // var dipole = newDipole.copy();
-  console.log("x = " + newDipole.r());
+  // console.log("x = " + newDipole.r());
   dipole.interpolate(t, oldDipole, newDipole);
-  console.log("y = " + dipole.r());
+  // console.log("y = " + dipole.r());
 
   var logValues = new Object();
   logValues.num_events = numEvents.toFixed(4);
@@ -1939,6 +1924,10 @@ window.onload = function init() {
                     gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                     collisionType:"0", updateP:true, updateM:true,
                     showPath:false };
+  demos.fiat = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  collisionType:"1", updateP:true, updateM:true, 
+                  showPath:true };
 
   checkDemoCookie();
   demoChanged();
