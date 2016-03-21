@@ -1,12 +1,13 @@
+//------------------------------------------------------------
+// Constructor
+//------------------------------------------------------------
 var Plot = function() {
   this.canvas = document.getElementById("gl-plot-canvas");
-  
 
   this.gl = WebGLUtils.setupWebGL(this.canvas);
   if (!this.gl) { alert("WebGL isn't available"); }
 
   this.resize();
-  // this.gl.viewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
 
   this.gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
@@ -20,6 +21,9 @@ var Plot = function() {
   this.program = new FlatProgram(this.gl);
 }
 
+//------------------------------------------------------------
+// Update labels of the plot
+//------------------------------------------------------------
 Plot.prototype.updateLabels = function() {
   document.getElementById("xmin").innerHTML =
     degrees(this.points.minx).toFixed(0);
@@ -37,6 +41,9 @@ Plot.prototype.updateLabels = function() {
   // }
 }
 
+//------------------------------------------------------------
+// resize
+//------------------------------------------------------------
 Plot.prototype.resize = function() {
   // Lookup the size the browser is displaying the canvas.
   var displayWidth  = this.canvas.clientWidth;
@@ -59,6 +66,9 @@ Plot.prototype.resize = function() {
   this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 }
 
+//------------------------------------------------------------
+// render
+//------------------------------------------------------------
 Plot.prototype.render = function() {
   if (!this.program.initialized) return false;
 
@@ -102,11 +112,17 @@ Plot.prototype.render = function() {
   return true;
 }
 
+//------------------------------------------------------------
+// push a point
+//------------------------------------------------------------
 Plot.prototype.push = function(p) {
   this.points.push(p);
   this.updateLabels();
 }
 
+//------------------------------------------------------------
+// clear all points
+//------------------------------------------------------------
 Plot.prototype.clear = function() {
   this.points.clear();
   this.updateLabels();

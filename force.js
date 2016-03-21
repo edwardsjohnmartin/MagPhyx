@@ -1,8 +1,3 @@
-// TODO: phi = beta events
-//       beta plot
-//       beta = phi - phi_m
-//       phi_m = angle of magnetic field
-
 "use strict";
 
 // diameter
@@ -139,6 +134,7 @@ var id2label = new Object();
 id2label["event_type"] = "type";
 id2label["theta"] = "&theta;";
 id2label["phi"] = "&phi;";
+id2label["beta"] = "&beta;";
 id2label["pr"] = "p<sub>r</sub>";
 id2label["ptheta"] = "p<sub>&theta;</sub>";
 id2label["pphi"] = "p<sub>&phi;</sub>";
@@ -825,6 +821,12 @@ function isZeroCrossing(a, b) {
   return (sign(a) == -sign(b)) || (sign(a) != 0 && sign(b) == 0);
 }
 
+function isNegativeZeroCrossing(a, b) {
+  // Return true if we cross zero from positive to negative or from
+  // zero to negative.
+  return (sign(a) > 0 && sign(b) <= 0);
+}
+
 function updatePositions() {
   var oldFreeDipole = freeDipole.copy();
 
@@ -923,40 +925,31 @@ function updatePositions() {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.theta();});
     event("theta = 0", logDipole);
-    // event("theta = 0", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.phi();});
-    // event("phi = 0 1", oldFreeDipole);
     event("phi = 0", logDipole);
-    // event("phi = 0 3", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.beta();});
-    // event("beta = 0 1", oldFreeDipole);
     event("beta = 0", logDipole);
-    // event("beta = 0 3", freeDipole);
   }
-  if (isZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
+  if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.pr();});
-    // event("pr = 0 1", oldFreeDipole);
     event("pr = 0", logDipole);
-    // event("pr = 0 3", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
     event("ptheta = 0", logDipole);
-    // event("ptheta = 0", freeDipole);
   }
   if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.pphi();});
     event("pphi = 0", logDipole);
-    // event("pphi = 0", freeDipole);
   }
 }
 
@@ -966,7 +959,6 @@ function event(eventType, dipole) {
   debugValues.event_type = eventType;
 
   if (eventType == "collision") {
-    // plot.push(vec4(dipole.theta(), dipole.phi(), 0, 1));
     plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
   }
   updateLog(eventType, dipole);
@@ -1054,6 +1046,7 @@ function updateDebug(dipole) {
   debugValues.r = dipole.r().toFixed(4);
   debugValues.theta = degrees(dipole.theta()).toFixed(4);
   debugValues.phi = degrees(dipole.phi()).toFixed(4);
+  debugValues.beta = degrees(dipole.beta()).toFixed(4);
 
   debugValues.pr = dipole.pr().toFixed(4);
   debugValues.ptheta = dipole.ptheta().toFixed(4);
@@ -1066,18 +1059,20 @@ function updateDebug(dipole) {
 var ticks = 0;
 var tickElapsedTime = 0;
 var ticksPerUpdate = 10;
+var loggedPoint = vec3(0, 0, 0);
 function tick() {
-  // if (!freeDipole.fixed && animate) {
   if (animate) {
     ticks++;
     requestAnimFrame(tick);
-    // var animSpeed = document.getElementById("animSpeed").value;
     var animSpeed = 500;
 
     var start = new Date().getTime();
-    // for (var i = 0; !freeDipole.fixed && i < animSpeed; ++i) {
     for (var i = 0; i < animSpeed; ++i) {
       updatePositions();
+      if (length(subtract(loggedPoint, freeDipole.p)) > 0.01) {
+        path.push(vec4(freeDipole.p[0], freeDipole.p[1], 0, 1));
+        loggedPoint = freeDipole.p;
+      }
     }
 
     var stop = new Date().getTime();
@@ -1089,7 +1084,7 @@ function tick() {
       ticks = 0;
     }
 
-    path.push(vec4(freeDipole.p[0], freeDipole.p[1], 0, 1));
+    // path.push(vec4(freeDipole.p[0], freeDipole.p[1], 0, 1));
     updateForces();
     render();
   }
