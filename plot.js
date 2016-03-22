@@ -17,8 +17,11 @@ var Plot = function() {
   this.points.setBB(-Math.PI, Math.PI, -Math.PI, Math.PI);
   this.updateLabels();
 
+  this.domain = new Domain(this.gl);
+
   //  Load shaders and initialize attribute buffers
   this.program = new FlatProgram(this.gl);
+  this.domainProgram = new DomainProgram(this.gl);
 }
 
 //------------------------------------------------------------
@@ -66,48 +69,105 @@ Plot.prototype.resize = function() {
   this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 }
 
+Plot.prototype.renderDomain = function(pm, mvm) {
+  var prog = this.domainProgram;
+
+  if (!prog.initialized) return false;
+
+  //--------------------------------
+  // Render the domain shells
+  //--------------------------------
+  this.gl.useProgram(prog.program);
+
+  this.gl.enableVertexAttribArray(prog.vertexLoc);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.domain.vertexBuffer);
+  this.gl.vertexAttribPointer(prog.vertexLoc, 4, this.gl.FLOAT, false, 0, 0);
+
+  this.gl.uniformMatrix4fv(prog.pMatrixLoc, false, flatten(pm));
+  this.gl.uniformMatrix4fv(prog.mvMatrixLoc, false, flatten(mvm));
+
+  var E = freeDipole.E();
+
+  var n = this.domain.n;
+  var segments = [ { start:0, count:n/2-2 },
+                   { start:n/2+2, count:n/2-2 }];
+  // n is determined from the equation for r_c in the paper by solving
+  // for theta at r = 1.0.
+  var cos = (144*E*E-10)/6;
+  if (E < 0 && cos >= -1 && cos <= 1) {
+    var theta = Math.acos(cos) / 2;
+    segments = this.domain.wrappedSegments(theta);
+  }
+
+  this.gl.uniform1f(prog.ELoc, E);
+  this.gl.uniform1i(prog.plotLoc, 1);
+
+  // fill
+  this.gl.uniform1i(prog.modeLoc, 2);
+  this.gl.uniform4fv(prog.colorLoc, flatten(this.domain.fillColor));
+  for (var i = 0; i < segments.length; ++i) {
+    var segment = segments[i];
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, segment.start, segment.count);
+  }
+  // outline
+  this.gl.uniform4fv(prog.colorLoc, flatten(this.domain.outlineColor));
+  for (var mode = 0; mode < 2; ++mode) {
+    this.gl.uniform1i(prog.modeLoc, mode);
+    for (var i = 0; i < segments.length; ++i) {
+      var segment = segments[i];
+      this.gl.drawArrays(this.gl.LINE_STRIP, segment.start, segment.count);
+    }
+  }
+
+  return true;
+}
+
 //------------------------------------------------------------
 // render
 //------------------------------------------------------------
-Plot.prototype.render = function() {
-  if (!this.program.initialized) return false;
+Plot.prototype.renderPoints = function(pm, mvm) {
+  var prog = this.program;
+  if (!prog.initialized) return false;
 
+  this.gl.useProgram(prog.program);
+
+  this.gl.enableVertexAttribArray(prog.vertexLoc);
+  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.points.vertexBuffer);
+  this.gl.vertexAttribPointer(prog.vertexLoc, 4,
+                              this.gl.FLOAT, false, 0, 0);
+
+  this.gl.uniformMatrix4fv(prog.mvMatrixLoc, false, flatten(mvm));
+  this.gl.uniformMatrix4fv(prog.pMatrixLoc, false, flatten(pm));
+  this.gl.uniform4fv(prog.colorLoc, flatten(black));
+
+  if (this.points.n > 0) {
+    if (this.points.n > 1) {
+      this.gl.uniform1f(prog.pointSize, 1);
+      this.gl.drawArrays(this.gl.POINTS, 0, this.points.n-1);
+    }
+
+    this.gl.uniform1f(prog.pointSize, 3);
+    this.gl.drawArrays(this.gl.POINTS, this.points.n-1, 1);
+  }
+
+  return true;
+}
+
+Plot.prototype.render = function() {
   this.gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  pushMatrix();
   this.aspect = this.canvas.clientWidth / this.canvas.clientHeight;
-  // var pm = ortho(0, this.canvas.width, 0, this.canvas.height, 0, 2);
   var pm = ortho(-1, 1, -1, 1, 0, 2);
   var mvm = mat4();
 
   var rangex = this.points.maxx-this.points.minx;
   var rangey = this.points.maxy-this.points.miny;
-  mvm = mult(mvm, scalem(1.8/rangex, 1.8/rangey, 1));
+  // mvm = mult(mvm, scalem(1.8/rangex, 1.8/rangey, 1));
+  mvm = mult(mvm, scalem(2/rangex, 2/rangey, 1));
 
+  if (!this.renderDomain(pm, mvm)) return false;
+  if (!this.renderPoints(pm, mvm)) return false;
   this.updateLabels();
-
-  this.gl.enableVertexAttribArray(this.program.vertexLoc);
-  this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.points.vertexBuffer);
-  this.gl.vertexAttribPointer(this.program.vertexLoc, 4,
-                              this.gl.FLOAT, false, 0, 0);
-
-  this.gl.uniformMatrix4fv(this.program.mvMatrixLoc, false, flatten(mvm));
-  this.gl.uniformMatrix4fv(this.program.pMatrixLoc, false, flatten(pm));
-  this.gl.uniform4fv(this.program.colorLoc, flatten(black));
-
-  if (this.points.n > 1) {
-    this.gl.uniform1f(this.program.pointSize, 1);
-    this.gl.drawArrays(this.gl.POINTS, 0, this.points.n-1);
-  }
-
-  if (this.points.n > 0) {
-    this.gl.uniform1f(this.program.pointSize, 3);
-    this.gl.drawArrays(this.gl.POINTS, this.points.n-1, 1);
-  }
-  // this.gl.uniform1f(this.program.pointSize, 1);
-  // this.gl.drawArrays(this.gl.LINE_STRIP, 0, 2);
-
-  popMatrix();
 
   return true;
 }

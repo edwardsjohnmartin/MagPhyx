@@ -628,26 +628,29 @@ function renderDomain() {
 
   // n is determined from the equation for r_c in the paper by solving
   // for theta at r = 1.0.
-  // var n = domain.size;
-  var segments = [ { start:0, count:domain.size } ];
+  // var n = domain.n;
+  var segments = [ { start:0, count:domain.n } ];
   var cos = (144*E*E-10)/6;
-  if (cos >= -1 && cos <= 1) {
+  if (E < 0 && cos >= -1 && cos <= 1) {
     var theta = Math.acos(cos) / 2;
     segments = domain.segments(theta);
   }
 
   gl.uniform1f(domainProgram.ELoc, E);
+  gl.uniform1i(domainProgram.plotLoc, 0);
 
   // fill
   gl.uniform1i(domainProgram.modeLoc, 2);
   gl.uniform4fv(domainProgram.colorLoc,
-                flatten(vec4(0.95, 0.95, 1.0, 1.0)));
+                // flatten(vec4(0.95, 0.95, 1.0, 1.0)));
+                flatten(domain.fillColor));
   for (var i = 0; i < segments.length; ++i) {
     var segment = segments[i];
     gl.drawArrays(gl.TRIANGLE_STRIP, segment.start, segment.count);
   }
   // outline
-  gl.uniform4fv(domainProgram.colorLoc, flatten(blue));
+  // gl.uniform4fv(domainProgram.colorLoc, flatten(blue));
+  gl.uniform4fv(domainProgram.colorLoc, flatten(domain.outlineColor));
   for (var mode = 0; mode < 2; ++mode) {
     gl.uniform1i(domainProgram.modeLoc, mode);
     for (var i = 0; i < segments.length; ++i) {
@@ -862,9 +865,10 @@ function computeIntersection(c0, c1, dx) {
   return qt;
 }
 
-function isTouching(p0, p1) {
-  var EPSILON = 0.0000000001;
-  return (Math.abs(length(subtract(p0, p1)) - D) < EPSILON);
+function isTouching(fixed, free) {
+  // var EPSILON = 0.0000000001;
+  var EPSILON = 0.00000001;
+  return (length(subtract(fixed, free)) - D < EPSILON);
 }
 
 function sign(d) {
@@ -898,7 +902,7 @@ function updatePositions() {
   } else {
     // Handle separately in case there are collisions.
     var touching = isTouching(fixedDipole.p, freeDipole.p);
-
+    debugValues.touching = touching;
     if (touching && dot(rk.v, freeDipole.p) < 0) {
       // "Sliding" case.
       // Spheres are touching and traveling towards each other.
@@ -1913,7 +1917,7 @@ window.onload = function init() {
   phiArrow = new PhiArrow();
   path = new Points(gl);
   sin2 = new Sin2();
-  domain = new Domain(4/24);
+  domain = new Domain(gl);
   forceArrow = new ForceArrow();
   bArrow = new BArrow();
   torqueArrow = new TorqueArrow();

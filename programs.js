@@ -95,6 +95,7 @@ var DomainProgram = function(gl) {
       prog.colorLoc = gl.getUniformLocation(prog.program, "color");
       prog.ELoc = gl.getUniformLocation(prog.program, "E");
       prog.modeLoc = gl.getUniformLocation(prog.program, "mode");
+      prog.plotLoc = gl.getUniformLocation(prog.program, "plot");
 
       gl.uniform1f(prog.pointSize, 1.0);
     });
