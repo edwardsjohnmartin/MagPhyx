@@ -66,6 +66,7 @@ var circle;
 var phiArrow;
 var path;
 var sin2;
+var domain;
 var forceArrow;
 var bArrow;
 var torqueArrow;
@@ -77,6 +78,7 @@ var freeDipole;
 var lineProgram;
 var circleProgram;
 var flatProgram;
+var domainProgram;
 var sphereProgram;
 var textureProgram;
 
@@ -605,6 +607,59 @@ function renderB() {
 
   return true;
 };
+
+function renderDomain() {
+  if (!domainProgram.initialized) return false;
+
+  //--------------------------------
+  // Render the domain shells
+  //--------------------------------
+  gl.useProgram(domainProgram.program);
+
+  gl.enableVertexAttribArray(domainProgram.vertexLoc);
+  gl.bindBuffer(gl.ARRAY_BUFFER, domain.vertexBuffer);
+  gl.vertexAttribPointer(domainProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
+
+  pushMatrix();
+  gl.uniformMatrix4fv(domainProgram.pMatrixLoc, false, flatten(pMatrix));
+  gl.uniformMatrix4fv(domainProgram.mvMatrixLoc, false, flatten(mvMatrix));
+
+  var E = freeDipole.E();
+
+  // n is determined from the equation for r_c in the paper by solving
+  // for theta at r = 1.0.
+  // var n = domain.size;
+  var segments = [ { start:0, count:domain.size } ];
+  var cos = (144*E*E-10)/6;
+  if (cos >= -1 && cos <= 1) {
+    var theta = Math.acos(cos) / 2;
+    segments = domain.segments(theta);
+  }
+
+  gl.uniform1f(domainProgram.ELoc, E);
+
+  // fill
+  gl.uniform1i(domainProgram.modeLoc, 2);
+  gl.uniform4fv(domainProgram.colorLoc,
+                flatten(vec4(0.95, 0.95, 1.0, 1.0)));
+  for (var i = 0; i < segments.length; ++i) {
+    var segment = segments[i];
+    gl.drawArrays(gl.TRIANGLE_STRIP, segment.start, segment.count);
+  }
+  // outline
+  gl.uniform4fv(domainProgram.colorLoc, flatten(blue));
+  for (var mode = 0; mode < 2; ++mode) {
+    gl.uniform1i(domainProgram.modeLoc, mode);
+    for (var i = 0; i < segments.length; ++i) {
+      var segment = segments[i];
+      gl.drawArrays(gl.LINE_STRIP, segment.start, segment.count);
+    }
+  }
+
+  popMatrix();
+
+  return true;
+}
 
 function renderBArrow(p, gs) {
   if (!flatProgram.initialized) return false;
@@ -1299,6 +1354,8 @@ function render() {
 
   var success = true;
 
+  success = success && renderDomain();
+
   if (showB) {// && !showOutlineMode) {
     success = success && renderB();
   }
@@ -1839,6 +1896,7 @@ window.onload = function init() {
   lineProgram = new LineProgram();
   circleProgram = new CircleProgram();
   flatProgram = new FlatProgram(gl);
+  domainProgram = new DomainProgram(gl);
   sphereProgram = new SphereProgram();
   textureProgram = new TextureProgram();
 
@@ -1855,6 +1913,7 @@ window.onload = function init() {
   phiArrow = new PhiArrow();
   path = new Points(gl);
   sin2 = new Sin2();
+  domain = new Domain(4/24);
   forceArrow = new ForceArrow();
   bArrow = new BArrow();
   torqueArrow = new TorqueArrow();
