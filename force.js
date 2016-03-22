@@ -872,7 +872,9 @@ function isTouching(fixed, free) {
 }
 
 function sign(d) {
-  return (d < 0) ? -1 : (d > 0) ? 1 : 0;
+  var EPSILON = 0.000000000001;
+  // if (Math.abs(d) < EPSILON) return 0;
+  return (d < -EPSILON) ? -1 : (d > EPSILON) ? 1 : 0;
 }
 
 function isZeroCrossing(a, b) {
@@ -980,27 +982,28 @@ function updatePositions() {
   updateDebug(freeDipole);
 
   // Log zero crossings
-  if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-    var logDipole = Dipole.interpolateZeroCrossing(
-      oldFreeDipole, freeDipole, function(d) {return d.theta();});
-    event("theta = 0", logDipole);
-  }
-  if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-    var logDipole = Dipole.interpolateZeroCrossing(
-      oldFreeDipole, freeDipole, function(d) {return d.phi();});
-    event("phi = 0", logDipole);
-  }
-  if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
-    var logDipole = Dipole.interpolateZeroCrossing(
-      oldFreeDipole, freeDipole, function(d) {return d.beta();});
-    event("beta = 0", logDipole);
-  }
-  if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
-    var logDipole = Dipole.interpolateZeroCrossing(
-      oldFreeDipole, freeDipole, function(d) {return d.pr();});
-    event("pr = 0", logDipole);
-  }
+  // if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
+  //   var logDipole = Dipole.interpolateZeroCrossing(
+  //     oldFreeDipole, freeDipole, function(d) {return d.theta();});
+  //   event("theta = 0", logDipole);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
+  //   var logDipole = Dipole.interpolateZeroCrossing(
+  //     oldFreeDipole, freeDipole, function(d) {return d.phi();});
+  //   event("phi = 0", logDipole);
+  // }
+  // if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
+  //   var logDipole = Dipole.interpolateZeroCrossing(
+  //     oldFreeDipole, freeDipole, function(d) {return d.beta();});
+  //   event("beta = 0", logDipole);
+  // }
+  // if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
+  //   var logDipole = Dipole.interpolateZeroCrossing(
+  //     oldFreeDipole, freeDipole, function(d) {return d.pr();});
+  //   event("pr = 0", logDipole);
+  // }
   if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
+    // console.log(oldFreeDipole.ptheta() + " " + freeDipole.ptheta());
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
     event("ptheta = 0", logDipole);
@@ -1957,6 +1960,10 @@ window.onload = function init() {
   demos.fiat = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                   collisionType:"1", updateP:true, updateM:true, 
+                  showPath:true };
+  demos.peugeot = { r:1.2, theta:90, phi:180, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  collisionType:"0", updateP:true, updateM:true, 
                   showPath:true };
 
   checkDemoCookie();

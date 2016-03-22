@@ -52,9 +52,13 @@ Dipole.prototype.copy = function() {
 // }
 
 Dipole.interpolateZeroCrossing = function(src, target, f) {
+  var EPSILON = 0.000000000001;
   var srcValue = f(src);
   var targetValue = f(target);
   var t = (-srcValue) / (targetValue - srcValue);
+  if (Math.abs(targetValue - srcValue) < EPSILON) {
+    t = 0;
+  }
   var ret = src.copy();
   // ret.interpolate(t, src, target);
 
@@ -70,6 +74,9 @@ Dipole.interpolateZeroCrossing = function(src, target, f) {
 
   // console.log("1t = " + t + " pr = " + pr_ + " " + target.pr() + " " + src.pr());
   ret.p = vec3(x*D, y*D, 0);
+  // if (isNaN(ret.p[0])) {
+  //   console.log(t);
+  // }
   ret.m = vec3(Math.cos(phi), Math.sin(phi), 0);
   ret.set_pr(pr_);
   // console.log("2 " + ret.pr());
@@ -120,6 +127,9 @@ Dipole.prototype.dr = function() {
 }
 
 Dipole.prototype.set_dr = function(dr) {
+  // if (isNaN(this.p[0])) {
+  //   console.log(this.p + " " + this.v + " " + dr);
+  // }
   var u = cross(normalized(this.p), vec3(0, 0, -1));
   if (length(this.v) > 0) {
     u = mult(u, dot(u, normalized(this.v)));
