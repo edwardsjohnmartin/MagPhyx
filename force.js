@@ -14,7 +14,8 @@ var mesh2Obj = D/2;
 // Scale factor for the dipole field texture
 var fieldTexCoord2Obj = D * 13.0;
 
-var log = "";
+var logString = "";
+var logger = new Logger();
 
 var elapsedTime = 0;
 var animate = false;
@@ -83,6 +84,7 @@ var sphereProgram;
 var textureProgram;
 
 var plot;
+var statePanel;
 
 var texture;
 
@@ -130,53 +132,11 @@ var logEntries = [
 var logEntrySet = new Set(logEntries);
 
 var showDebug = true;
-var verboseDebug = false;
 var debugValues = new Object();
 var DebugLabel = function(name, label) {
   this.name = name;
   this.label = label;
 }
-
-var id2label = new Object();
-// id2label["event_type"] = "event type";
-id2label["event_type"] = "type";
-id2label["theta"] = "&theta;";
-id2label["phi"] = "&phi;";
-id2label["beta"] = "&beta;";
-id2label["pr"] = "p<sub>r</sub>";
-id2label["ptheta"] = "p<sub>&theta;</sub>";
-id2label["pphi"] = "p<sub>&phi;</sub>";
-id2label["dE"] = "&Delta;E";
-// id2label["num_collisions"] = "n";
-id2label["num_events"] = "n";
-id2label["v_at_collision"] = "v<sub>coll</sub>";
-id2label["t_at_collision"] = "t<sub>coll</sub>";
-id2label["time_at_zero_crossing"] = "t<sub>zero</sub>";
-id2label["w_at_zero_crossing"] = "&omega;<sub>zero</sub>";
-id2label["theta_range"] = "&theta; range";
-id2label["phi_range"] = "&phi; range";
-id2label["t_eddy_mag"] = "|&tau;<sub>eddy</sub>|";
-id2label["f_eddy_mag"] = "|F<sub>eddy</sub>|";
-id2label["U"] = "U";
-id2label["T"] = "T";
-id2label["R"] = "R";
-id2label["E"] = "E";
-id2label["w"] = "&omega;";
-id2label["v_mag"] = "|v|";
-id2label["m"] = "m (&deg;)";
-id2label["B_mag"] = "|B|";
-id2label["tau"] = "|&tau;|";
-id2label["tau_net"] = "|&tau;<sub>net</sub>|";
-id2label["F"] = "F";
-id2label["F_mag"] = "|F|";
-id2label["F_mag_net"] = "|F<sub>net</sub>|";
-id2label["elapsed_time"] = "t";
-id2label["time_step"] = "&Delta;t";
-
-var id2logLabel = new Object();
-id2logLabel["num_events"] = "n";
-id2logLabel["event_type"] = "event type";
-id2logLabel["elapsed_time"] = "t";
 
 // var labeled = new Set();
 // for (var i = 0; i < debugLabels.length; ++i) {
@@ -723,40 +683,6 @@ function renderTexture() {
 };
 
 function updateForces(updateInitial) {
-  // freeDipole.F = F(fixedDipole, freeDipole, true);
-  // freeDipole.T = T(fixedDipole, freeDipole, true);
-  if (updateInitial) {
-    // freeDipole.F0 = freeDipole.F;
-    // freeDipole.T0 = freeDipole.T;
-    freeDipole.fixed = false;
-    // freeDipole.v = vec3(0, 0, 0);
-    // freeDipole.av = 0;
-    animate = false;
-  }
-
-  // for (var j = 0; j < dipoles.length; ++j) {
-  //   dipoles[j].F = vec3(0, 0, 0);
-  //   dipoles[j].T = vec3(0, 0, 0);
-  //   for (var i = 0; i < dipoles.length; ++i) {
-  //     if (i != j) {
-  //       // dipoles[j].F = add(dipoles[j].F, F(i, j));
-  //       dipoles[j].F = add(dipoles[j].F,
-  //                          F(dipoles[i], dipoles[j], true));
-  //       dipoles[j].T = add(dipoles[j].T,
-  //                          T(dipoles[i], dipoles[j], true));
-  //       // dipoles[j].T = dipoles[j].T + T(dipoles[i], dipoles[j]);
-  //     }
-  //   }
-  //   if (updateInitial) {
-  //     dipoles[j].F0 = dipoles[j].F;
-  //     dipoles[j].T0 = dipoles[j].T;
-  //     dipoles[j].fixed = false;
-  //     dipoles[j].v = vec3(0, 0, 0);
-  //     dipoles[j].av = 0;
-  //     animate = false;
-  //   }
-  // }
-
   updateDebug(freeDipole);
 }
 
@@ -912,14 +838,10 @@ function updatePositions() {
     // Handle separately in case there are collisions.
     var touching = isTouching(fixedDipole.p, freeDipole.p);
     debugValues.touching = touching;
-    // console.log("touching = " + touching);
-    // if (touching && dot(rk.v, freeDipole.p) < 0.0001) {
     if (touching && collisionType == INELASTIC) {
-      // console.log("sliding");
       // "Sliding" case.
       // Spheres are touching and traveling towards each other.
       // Translate in the tangential direction.
-      // var tangent = normalize(cross(R01, vec3(0, 0, 1)));
       var tangent = normalize(cross(freeDipole.p, vec3(0, 0, 1)));
       var newv = mult(tangent, dot(rk.v, tangent));
       // newp_tangent is the new position if traveling
@@ -930,9 +852,7 @@ function updatePositions() {
       var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
       var newp = add(fixedDipole.p, u);
       freeDipole.update(newp, newv, rk.theta, rk.omega, updateP, updateM);
-      // console.log(length(newp));
     } else {
-      // console.log("not sliding");
       // We're not touching or else we're traveling away from the fixed dipole
       var dx = subtract(rk.p, freeDipole.p);
       var qt = computeIntersection(fixedDipole.p, freeDipole.p, dx);
@@ -1041,13 +961,13 @@ function event(eventType, dipole) {
 }
 
 function resetLog() {
-  log = "";
+  logString = "";
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
-    var label = getLogLabel(property);
-    log += label + ",";
+    var label = logger.getLogLabel(property);
+    logString += label + ",";
   }
-  log += "\n";
+  logString += "\n";
 }
 
 function updateLog(eventType, dipole) {
@@ -1072,13 +992,13 @@ function updateLog(eventType, dipole) {
       value = logValues[property];
     }
     
-    log += value + ",";
+    logString += value + ",";
   }
-  log += "\n";
+  logString += "\n";
 }
 
 function exportLog() {
-  window.open('data:text/csv;charset=utf-8,' + escape(log));
+  window.open('data:text/csv;charset=utf-8,' + escape(logString));
 }
 
 function vecString(v, fixed) {
@@ -1099,26 +1019,12 @@ function R(dipole) {
 }
 
 function updateDebug(dipole) {
-  // Potential energy
-  // var U_ = -dot(dipole.m, B(fixedDipole.m, dipole.p));
   var U_ = U(dipole);//-dot(dipole.m, B(fixedDipole.m, dipole.p));
-  // Translational kinetic energy
   var T_ = Trans(dipole);
-  // Rotational kinetic energy
   var R_ = R(dipole);
-  // Total energy
   var E_ = U_ + T_ + R_;
-  // debugValues.U = U_.toFixed(4);
-  // debugValues.T = T_.toFixed(4);
-  // debugValues.R = R_.toFixed(4);
-  // debugValues.E = E_.toFixed(8);
   debugValues.E = dipole.E().toFixed(8);
-  // debugValues.dE = (E_-dipole.E0).toFixed(8);
   debugValues.dE = (E_-dipole.E0).toExponential(2);
-
-  // debugValues.v = dipole.v.map(function(n) { return n.toFixed(2) });
-  // debugValues.w = dipole.av.toFixed(4);
-  // debugValues.m = degrees(Math.atan2(dipole.m[1], dipole.m[0])).toFixed(4);
 
   debugValues.r = dipole.r().toFixed(4);
   debugValues.theta = degrees(dipole.theta()).toFixed(4);
@@ -1130,7 +1036,6 @@ function updateDebug(dipole) {
   debugValues.pphi = dipole.pphi().toFixed(4);
 
   debugValues.t = elapsedTime.toFixed(4);
-  // debugValues.num_collisions = numCollisions;
 }
 
 var ticks = 0;
@@ -1259,100 +1164,6 @@ function renderMagneticField(origin) {
   return success;
 }
 
-function renderPath() {
-  if (!flatProgram.initialized) return false;
-  gl.useProgram(flatProgram.program);
-
-  pushMatrix();
-  var s = 1;///mesh2Obj;
-  mvMatrix = mult(mvMatrix, scalem(s, s, 1));
-
-  gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, path.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniform4fv(flatProgram.colorLoc, flatten(red));
-
-  gl.drawArrays(gl.LINE_STRIP, 0, path.n);
-
-  popMatrix();
-
-  return true;
-}
-
-function getLabel(property) {
-  var label = property;
-  if (id2label.hasOwnProperty(property)) {
-    label = id2label[property];
-  }
-  return label;
-}
-
-function getLogLabel(property) {
-  var label = property;
-  if (id2logLabel.hasOwnProperty(property)) {
-    label = id2logLabel[property];
-  }
-  return label;
-}
-
-function renderDebug() {
-  var debug = document.getElementById("debug");
-  var html = "";
-  if (showDebug) {
-    html = "<table border=\"0\">";
-    var first = true;
-    // Render debug values that don't have a custom label
-    for (var property in debugValues) {
-      if (debugValues.hasOwnProperty(property)) {
-        // var label = property;
-        // if (!labeled.has(property)) {
-        //   html += "<tr>";
-        //   html += "<td>" + label + ":</td>";
-        //   html += "<td>" + debugValues[property] + "</td>";
-        //   html += "</tr>";
-        // }
-        if (!logEntrySet.has(property) && verboseDebug) {
-          var label = getLabel(property);
-          html += "<tr style=\"font-size:12px\">";
-          html += "<td>" + label + ":</td>";
-          html += "<td>" + debugValues[property] + "</td>";
-          html += "</tr>";
-        }
-      }
-    }
-    // for (var i = 0; i < debugLabels.length; i++) {
-    //   var label = debugLabels[i].label;
-    //   var property = debugLabels[i].name;
-    //   var value = "";
-    //   if (debugValues.hasOwnProperty(property)) {
-    //     value = debugValues[property];
-    //   }
-    //   html += "<tr>";
-    //   html += "<td>" + label + ":</td>";
-    //   html += "<td>" + value + "</td>";
-    //   html += "</tr>";
-    // }
-    for (var i = 0; i < logEntries.length; i++) {
-      // var property = debugLabels[i].name;
-      // var label = debugLabels[i].label;
-      var property = logEntries[i];
-      var label = getLabel(property);
-      var value = "";
-      if (debugValues.hasOwnProperty(property)) {
-        value = debugValues[property];
-      }
-      html += "<tr>";
-      html += "<td>" + label + ":</td>";
-      html += "<td>" + value + "</td>";
-      html += "</tr>";
-    }
-  }
-  debug.innerHTML = html;
-}
-
 function render() {
   resize(canvas);
   aspect = canvas.width/canvas.height;
@@ -1393,7 +1204,8 @@ function render() {
   }
 
   if (showPath) {
-    renderPath();
+    // renderPath();
+    path.render();
   }
 
   if (showCircles) {
@@ -1447,7 +1259,7 @@ function render() {
 
   plot.render();
 
-  renderDebug();
+  statePanel.render(debugValues);
 
   if (!success) {
     requestAnimFrame(render);
@@ -1577,7 +1389,7 @@ function keyDown(e) {
     exportLog();
     break;
   case "V".charCodeAt(0):
-    verboseDebug = !verboseDebug;
+    statePanel.toggleVerbose();
     render();
     break;
   // default:
@@ -1938,6 +1750,7 @@ window.onload = function init() {
   if (!gl) { alert("WebGL isn't available"); }
 
   plot = new Plot();
+  statePanel = new StatePanel();
 
   gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -1964,7 +1777,8 @@ window.onload = function init() {
   square = new Square();
   circle = new Circle();
   phiArrow = new PhiArrow();
-  path = new Points(gl);
+  // path = new Points(gl);
+  path = new Path(gl);
   sin2 = new Sin2();
   domain = new Domain(gl);
   forceArrow = new ForceArrow();
