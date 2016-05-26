@@ -31,8 +31,8 @@
     <script type="text/javascript" src="segment.js"></script>
     <script type="text/javascript" src="physics.js"></script>
     <script type="text/javascript" src="dipole.js"></script>
-    <script type="text/javascript" src="force.js"></script>
     <script type="text/javascript" src="plot.js"></script>
+    <script type="text/javascript" src="force.js"></script>
     
   </head>
 
@@ -148,14 +148,16 @@
           <div style="text-align:center">
           <label style="text-align:center">demos
             <select id="demos" onchange="demoChanged()">
-              <option value="default" selected="selected">Default</option>
-              <option value="volvo">Volvo</option>
-              <option value="saab">Saab</option>
-              <option value="hyundai">Hyundai</option>
-              <option value="toyota">Toyota</option>
-              <option value="bmw">BMW</option>
-              <option value="fiat">Fiat</option>
-              <option value="peugeot">Peugeot</option>
+              <option value="demo1" selected="selected">Demo 1</option>
+              <option value="demo2">Demo 2</option>
+              <option value="demo3">Demo 3</option>
+              <option value="demo4">Demo 4</option>
+              <option value="demo5">Demo 5</option>
+              <option value="demo6">Demo 6</option>
+              <option value="demo7">Demo 7</option>
+              <option value="demo8">Demo 8</option>
+              <option value="demo9">Demo 9</option>
+              <option value="demo10">Demo 10</option>
             </select>
           </label>
           </div>
@@ -284,7 +286,7 @@
                                    class="dt"
                                    id="simSpeed"
                                    onchange="simSpeedChanged()"
-                                   value="10"
+                                   value="1"
                                    step="1"/>x10<sup>-4</sup>
                 </td>
               </tr>
@@ -294,8 +296,8 @@
                        id="collisionType"
                        value="1"
                        onchange="collisionTypeChanged()">
-                    <option value="0" selected="selected">Elastic</option>
-                    <option value="1">Inelastic</option>
+                    <option value="elastic" selected="selected">Elastic</option>
+                    <option value="inelastic">Inelastic</option>
                   </select>
                 </td>
               </tr>
@@ -330,6 +332,17 @@
                   </label>
                 </td>
               </tr>
+              <!--tr>
+                <td colSpan="4" style="text-align:center">
+                  <label title="Run simulation without visual updates">
+                    <input
+                       type="checkbox"
+                       id="showAnimation"
+                       onclick="showAnimationClicked()"
+                       onfocus="removeFocus()">show animation<br>
+                  </label>
+                </td>
+              </tr-->
             </table>
           </div>
         </td>

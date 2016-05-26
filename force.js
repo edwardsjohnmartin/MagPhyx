@@ -107,15 +107,21 @@ var simSpeed;
 var gamma, gamma_star;
 var mu_m;
 var collisionType;
-var ELASTIC = 0;
-var INELASTIC = 1;
+// var ELASTIC = 0;
+// var INELASTIC = 1;
+var ELASTIC = "elastic";
+var INELASTIC = "inelastic";
 var eta, eta_star;
 
 // What to render
 var showB = true;
+var showDomain = true;
 var showCircles = true;
 // var showOutlineMode = false;
 var showPath = false;
+var showAnimation = true;
+
+var logAllEvents = true;
 
 var logEntries = [
   "num_events", "event_type", "t",
@@ -388,7 +394,7 @@ function renderTorqueArrow(dipole, t, color, thin) {
 
   var p = dipole.p;
 
-  if (length(t) == 0) {
+  if (length(t) < 0.0000001) {
     return true;
   }
 
@@ -879,7 +885,8 @@ function sign(d) {
 
 function isZeroCrossing(a, b) {
   // Return true if we cross zero or if we move from non-zero to zero.
-  return (sign(a) == -sign(b)) || (sign(a) != 0 && sign(b) == 0);
+  if (sign(a) == 0) return false;
+  return (sign(a) == -sign(b)) || (sign(b) == 0);
 }
 
 function isNegativeZeroCrossing(a, b) {
@@ -905,7 +912,10 @@ function updatePositions() {
     // Handle separately in case there are collisions.
     var touching = isTouching(fixedDipole.p, freeDipole.p);
     debugValues.touching = touching;
-    if (touching && dot(rk.v, freeDipole.p) < 0) {
+    // console.log("touching = " + touching);
+    // if (touching && dot(rk.v, freeDipole.p) < 0.0001) {
+    if (touching && collisionType == INELASTIC) {
+      // console.log("sliding");
       // "Sliding" case.
       // Spheres are touching and traveling towards each other.
       // Translate in the tangential direction.
@@ -920,7 +930,9 @@ function updatePositions() {
       var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
       var newp = add(fixedDipole.p, u);
       freeDipole.update(newp, newv, rk.theta, rk.omega, updateP, updateM);
+      // console.log(length(newp));
     } else {
+      // console.log("not sliding");
       // We're not touching or else we're traveling away from the fixed dipole
       var dx = subtract(rk.p, freeDipole.p);
       var qt = computeIntersection(fixedDipole.p, freeDipole.p, dx);
@@ -982,28 +994,27 @@ function updatePositions() {
   updateDebug(freeDipole);
 
   // Log zero crossings
-  // if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.theta();});
-  //   event("theta = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.phi();});
-  //   event("phi = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.beta();});
-  //   event("beta = 0", logDipole);
-  // }
-  // if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.pr();});
-  //   event("pr = 0", logDipole);
-  // }
+  if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.theta();});
+    event("theta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.phi();});
+    event("phi = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.beta();});
+    event("beta = 0", logDipole);
+  }
+  if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.pr();});
+    event("pr = 0", logDipole);
+  }
   if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
-    // console.log(oldFreeDipole.ptheta() + " " + freeDipole.ptheta());
     var logDipole = Dipole.interpolateZeroCrossing(
       oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
     event("ptheta = 0", logDipole);
@@ -1016,6 +1027,9 @@ function updatePositions() {
 }
 
 function event(eventType, dipole) {
+  if (!logAllEvents && eventType != "collision")
+    return;
+
   numEvents++;
   debugValues.num_events = numEvents;
   debugValues.event_type = eventType;
@@ -1049,7 +1063,7 @@ function updateLog(eventType, dipole) {
   logValues.pphi = dipole.pphi().toFixed(4);
   logValues.beta = dipole.beta().toFixed(4);
   logValues.E = dipole.E().toFixed(8);
-  logValues.dE = (dipole.E()-dipole.E0).toFixed(8);
+  logValues.dE = (dipole.E()-dipole.E0).toExponential(2);
 
   for (var i = 0; i < logEntries.length; i++) {
     var property = logEntries[i];
@@ -1099,7 +1113,8 @@ function updateDebug(dipole) {
   // debugValues.R = R_.toFixed(4);
   // debugValues.E = E_.toFixed(8);
   debugValues.E = dipole.E().toFixed(8);
-  debugValues.dE = (E_-dipole.E0).toFixed(8);
+  // debugValues.dE = (E_-dipole.E0).toFixed(8);
+  debugValues.dE = (E_-dipole.E0).toExponential(2);
 
   // debugValues.v = dipole.v.map(function(n) { return n.toFixed(2) });
   // debugValues.w = dipole.av.toFixed(4);
@@ -1126,9 +1141,17 @@ function tick() {
   if (animate) {
     ticks++;
     requestAnimFrame(tick);
+    // The following line was an attempt at getting the animation to continue
+    // even when the tab is inactive, but it appears that setTimeout() has
+    // been updated to have the same optimization as requestAnimFrame.
+    // setTimeout(tick, 1);
     var animSpeed = 500;
 
     var start = new Date().getTime();
+    var once = true;
+    // while (once || !showAnimation) {
+    // while (once || !document.getElementById("showAnimation").checked) {
+    once = false;
     for (var i = 0; i < animSpeed; ++i) {
       updatePositions();
       if (length(subtract(loggedPoint, freeDipole.p)) > 0.01) {
@@ -1136,6 +1159,7 @@ function tick() {
         loggedPoint = freeDipole.p;
       }
     }
+    // }
 
     var stop = new Date().getTime();
     tickElapsedTime += (stop-start);
@@ -1146,7 +1170,6 @@ function tick() {
       ticks = 0;
     }
 
-    // path.push(vec4(freeDipole.p[0], freeDipole.p[1], 0, 1));
     updateForces();
     render();
   }
@@ -1361,7 +1384,9 @@ function render() {
 
   var success = true;
 
-  success = success && renderDomain();
+  if (showDomain) {
+    success = success && renderDomain();
+  }
 
   if (showB) {// && !showOutlineMode) {
     success = success && renderB();
@@ -1503,18 +1528,27 @@ function keyDown(e) {
     // +
     zoomIn();
     break;
+  case "".charCodeAt(0):
+    toggleUpdate();
+    break;
   case " ".charCodeAt(0):
     toggleAnimate();
     break;
   case "N".charCodeAt(0):
-    updatePositions();
-    updateForces(false);
+    var nn = 1;
+    if (e.shiftKey) {
+      nn = 100;
+    }
+    for (var i = 0; i < nn; i++) {
+      updatePositions();
+      updateForces(false);
+    }
     render();
     break;
-  case "D".charCodeAt(0):
-    showDebug = !showDebug;
-    render();
-    break;
+  // case "D".charCodeAt(0):
+  //   showDebug = !showDebug;
+  //   render();
+  //   break;
   case "R".charCodeAt(0):
     reset();
     // updateForces(true);
@@ -1524,13 +1558,19 @@ function keyDown(e) {
     showB = !showB;
     render();
     break;
+  case "D".charCodeAt(0):
+    showDomain = !showDomain;
+    render();
+    break;
   case "P".charCodeAt(0):
     showPath = !showPath;
     // showOutlineMode = !showOutlineMode;
     render();
     break;
   case "C".charCodeAt(0):
-    showCircles = !showCircles;
+    // showCircles = !showCircles;
+    logAllEvents = !logAllEvents;
+    console.log("logAllEvents = " + logAllEvents);
     render();
     break;
   case "S".charCodeAt(0):
@@ -1740,7 +1780,8 @@ function reset() {
   gamma = Number(document.getElementById("gamma").value);
   gamma_star = Number(document.getElementById("gamma_star").value);
   mu_m = Number(document.getElementById("mu_m").value);
-  collisionType = Number(document.getElementById("collisionType").value);
+  collisionType = document.getElementById("collisionType").value;
+  simSpeed = Number(document.getElementById("simSpeed").value);
 
   // numCollisions = 0;
   numEvents = 0;
@@ -1797,6 +1838,11 @@ function showPathClicked() {
   render();
 }
 
+function showAnimationClicked() {
+  showAnimation = document.getElementById("showAnimation").checked;
+  render();
+}
+
 function eta_starChanged() {
   eta_star = Number(document.getElementById("eta_star").value);
 }
@@ -1818,7 +1864,7 @@ function mu_mChanged() {
 }
 
 function collisionTypeChanged() {
-  collisionType = Number(document.getElementById("collisionType").value);
+  collisionType = document.getElementById("collisionType").value;
 }
 
 function simSpeedChanged() {
@@ -1931,41 +1977,128 @@ window.onload = function init() {
   mu_m = Number(document.getElementById("mu_m").value);
   eta_star = Number(document.getElementById("eta_star").value);
   eta = Number(document.getElementById("eta").value);
-  collisionType = Number(document.getElementById("collisionType").value);
+  collisionType = document.getElementById("collisionType").value;
 
-  demos.default = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
-                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                    collisionType:"0", updateP:true, updateM:true,
-                    showPath:false };
+  // Demos
+  demos.demo1 = { r:1.5, theta:0, phi:0, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:1, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:false };
+  demos.demo2 = { r:1.5, theta:90, phi:180, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:1, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:false };
+  demos.demo3 = { r:1.1, theta:45, phi:45, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:2, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:false };
+  demos.demo4 = { r:1.1288129, theta:-21.59883, phi:0, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:20, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:true };
+  demos.demo5 = { r:1.1, theta:80, phi:80, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:100, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:true };
+  demos.demo6 = { r:1.5, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
+                  gamma:0.001, gamma_star:0.001, eta:0, eta_star:0, mu_m:0.1,
+                  simSpeed:1, collisionType:"inelastic",
+                  updateP:true, updateM:true, showPath:false };
+  demos.demo7 = { r:1.5, theta:0, phi:90, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:100, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:true };
+  demos.demo8 = { r:1.05, theta:135, phi:30, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:1, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:true };
+  demos.demo9 = { r:1, theta:0, phi:180, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  simSpeed:1, collisionType:"elastic",
+                  updateP:true, updateM:true, showPath:false };
+  demos.demo10 = { r:1, theta:90, phi:0, pr:0, ptheta:0, pphi:0,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  // demos.demo11 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
+  //                 gamma:0.12, gamma_star:0.03, eta:0, eta_star:0, mu_m:0.005,
+  //                 collisionType:"elastic", updateP:true, updateM:true,
+  //                 simSpeed:50,
+  //                 showPath:false };
+
+  // Old demos
+/*
+  demos.demo1 = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.01,
+                  collisionType:"elastic", updateP:true, updateM:true,
+                  simSpeed:1,
+                  showPath:false };
+  demos.demo2 = { r:1.001, theta:0, phi:180, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  collisionType:"elastic", updateP:true, updateM:true,
+                  simSpeed:1,
+                  showPath:false };
+  demos.demo3 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.01,
+                  collisionType:"elastic", updateP:true, updateM:true,
+                  simSpeed:1,
+                  showPath:false };
+  demos.demo4 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
+                  gamma:0.12, gamma_star:0.03, eta:0, eta_star:0, mu_m:0.005,
+                  collisionType:"elastic", updateP:true, updateM:true,
+                  simSpeed:100,
+                  showPath:false };
+  demos.demo5 = { r:1.2, theta:40, phi:-20, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  collisionType:"inelastic", updateP:true, updateM:true, 
+                  simSpeed:4,
+                  showPath:true };
+  demos.demo6 = { r:1.1288129858224798, theta:-21.59883244180276, phi:0, pr:0, ptheta:0, pphi:0,
+                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                  collisionType:"inelastic", updateP:true, updateM:true, 
+                  simSpeed:10,
+                  showPath:true };
   demos.volvo = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"0", updateP:true, updateM:true, 
+                  collisionType:"inelastic", updateP:true, updateM:true, 
+                  simSpeed:1,
                   showPath:true };
   demos.saab = { r:1.1, theta:90, phi:62, pr:0, ptheta:0, pphi:0,
                  gamma:0.005, gamma_star:0.005, eta:0, eta_star:0, mu_m:0,
-                 collisionType:"1", updateP:true, updateM:true,
+                 collisionType:"elastic", updateP:true, updateM:true,
+                 simSpeed:1,
                  showPath:false };
   demos.hyundai = { r:1.04, theta:-162, phi:30, pr:0, ptheta:0, pphi:0,
-                 gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                 collisionType:"0", updateP:true, updateM:true,
-                 showPath:false };
-  demos.toyota = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
-                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.5,
-                    collisionType:"1", updateP:true, updateM:true,
-                    showPath:false };
-  demos.bmw = { r:2, theta:2, phi:-30, pr:0, ptheta:0, pphi:0,
                     gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                    collisionType:"0", updateP:true, updateM:true,
+                    collisionType:"inelastic", updateP:true, updateM:true,
+                    simSpeed:1,
                     showPath:false };
+  demos.toyota = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.5,
+                   collisionType:"elastic", updateP:true, updateM:true,
+                   simSpeed:1,
+                   showPath:false };
+  demos.bmw = { r:2, theta:2, phi:-30, pr:0, ptheta:0, pphi:0,
+                gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                collisionType:"inelastic", updateP:true, updateM:true,
+                simSpeed:1,
+                showPath:false };
   demos.fiat = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"1", updateP:true, updateM:true, 
-                  showPath:true };
+                 gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                 collisionType:"elastic", updateP:true, updateM:true, 
+                 simSpeed:1,
+                 showPath:true };
   demos.peugeot = { r:1.2, theta:90, phi:180, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"0", updateP:true, updateM:true, 
-                  showPath:true };
-
+                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                    collisionType:"inelastic", updateP:true, updateM:true, 
+                    simSpeed:1,
+                    showPath:true };
+  demos.jaguar = { r:1.1288129858224798, theta:-21.59883244180276, phi:0, pr:0, ptheta:0, pphi:0,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1,
+                   collisionType:"inelastic", updateP:true, updateM:true, 
+                   showPath:true };
+*/
   checkDemoCookie();
   demoChanged();
 

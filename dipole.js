@@ -127,13 +127,12 @@ Dipole.prototype.dr = function() {
 }
 
 Dipole.prototype.set_dr = function(dr) {
-  // if (isNaN(this.p[0])) {
-  //   console.log(this.p + " " + this.v + " " + dr);
-  // }
   var u = cross(normalized(this.p), vec3(0, 0, -1));
   if (length(this.v) > 0) {
     u = mult(u, dot(u, normalized(this.v)));
     this.v = add(u, mult(normalized(this.p), dr));
+  } else {
+    this.v = mult(normalized(this.p), dr);
   }
 }
 

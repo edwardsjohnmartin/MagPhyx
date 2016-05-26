@@ -1,0 +1,16 @@
+#! /bin/bash
+
+# Steps to get the constants for a screen shot:
+#   * Select Demo 1
+#   * Resize Chrome such that the gray arrow just touches the zoom-in button
+#     and "show path" is barely not cut off.
+#   * Take an interactive screenshot to find the coordinates of the
+#     bottom-right-hand corner. Enter these coordinates below.
+#   * Make sure the terminal window is on the right-hand side of the screen.
+
+right=877
+bottom=633
+
+screencapture -R1,120,$right,$(($bottom-120+1)) $1
+#open test.png
+#rm test.png
