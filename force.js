@@ -14,7 +14,6 @@ var mesh2Obj = D/2;
 // Scale factor for the dipole field texture
 var fieldTexCoord2Obj = D * 13.0;
 
-var logString = "";
 var logger = new Logger();
 
 var elapsedTime = 0;
@@ -27,29 +26,6 @@ var updateM = true;
 
 var demos = new Object();
 
-var red = vec4(1, 0, 0, 1);
-var green = vec4(0, 1, 0, 1);
-var darkGreen = vec4(0, 0.7, 0.2, 1);
-var blue = vec4(0, 0, 1, 1);
-var cyan = vec4(0, 1, 1, 1);
-var darkMagenta = vec4(0.8, 0, 0.8, 1);
-var yellow = vec4(1, 1, 0, 1);
-var orange = vec4(0.8, 0.6, 0.0);
-var burntOrange = vec4(0.81, 0.33, 0.0);
-var gray = vec4(.5, .5, .5, 1);
-var lightGray = vec4(0.8, 0.8, 0.8, 1);
-var black = vec4(0, 0, 0, 1);
-var white = vec4(1, 1, 1, 1);
-
-var Fcolor = orange;
-var Tcolor = orange;
-var FnetColor = vec4(1.0, 0.6, 0.6, 1.0);
-var TnetColor = vec4(0.6, 0.6, 1.0, 1.0);
-var vcolor = darkGreen;
-var wcolor = darkGreen;
-var Bgray = gray;
-var Bcolor = lightGray;
-
 var canvas;
 var canvasX, canvasY;
 var canvasWidth, canvasHeight;
@@ -58,23 +34,12 @@ var canvasWidth, canvasHeight;
 var fw, fh;
 var gl;
 
-var axis;
-var floor;
-var arrow;
-var segment;
-var sphere;
-var circle;
-var phiArrow;
-var path;
-var sin2;
-var domain;
-var forceArrow;
-var bArrow;
-var torqueArrow;
-var square;
-// var dipoles = new Array();
 var fixedDipole;
 var freeDipole;
+
+var path;
+
+var renderer;
 
 var lineProgram;
 var circleProgram;
@@ -84,7 +49,6 @@ var sphereProgram;
 var textureProgram;
 
 var plot;
-var statePanel;
 
 var texture;
 
@@ -109,8 +73,6 @@ var simSpeed;
 var gamma, gamma_star;
 var mu_m;
 var collisionType;
-// var ELASTIC = 0;
-// var INELASTIC = 1;
 var ELASTIC = "elastic";
 var INELASTIC = "inelastic";
 var eta, eta_star;
@@ -125,24 +87,10 @@ var showAnimation = true;
 
 var logAllEvents = true;
 
-var logEntries = [
-  "num_events", "event_type", "t",
-  "r", "theta", "phi", "pr", "ptheta", "pphi", "beta",
-  "E", "dE" ];
-var logEntrySet = new Set(logEntries);
-
-var showDebug = true;
-var debugValues = new Object();
 var DebugLabel = function(name, label) {
   this.name = name;
   this.label = label;
 }
-
-// var labeled = new Set();
-// for (var i = 0; i < debugLabels.length; ++i) {
-//   var label = debugLabels[i];
-//   labeled.add(label.name);
-// }
 
 // Stack stuff
 var matrixStack = new Array();
@@ -152,535 +100,6 @@ function pushMatrix() {
 function popMatrix() {
   mvMatrix = matrixStack.pop();
 }
-
-function renderAxis() {
-  if (!lineProgram.initialized) return;
-  gl.useProgram(lineProgram.program);
-
-  gl.enableVertexAttribArray(lineProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, axis.vertexBuffer);
-  gl.vertexAttribPointer(lineProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(lineProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, axis.colorBuffer);
-  gl.vertexAttribPointer(lineProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(lineProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(lineProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.drawArrays(gl.LINES, 0, axis.numPoints);
-};
-
-function renderFloor() {
-  if (!lineProgram.initialized) return false;
-  gl.useProgram(lineProgram.program);
-
-  gl.enableVertexAttribArray(lineProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, floor.vertexBuffer);
-  gl.vertexAttribPointer(lineProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(lineProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, floor.colorBuffer);
-  gl.vertexAttribPointer(lineProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(lineProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(lineProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.drawArrays(gl.LINES, 0, floor.numPoints);
-
-  return true;
-};
-
-function renderArrow() {
-  if (!lineProgram.initialized) return false;
-  gl.useProgram(lineProgram.program);
-
-  gl.enableVertexAttribArray(lineProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, arrow.vertexBuffer);
-  gl.vertexAttribPointer(lineProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(lineProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, arrow.colorBuffer);
-  gl.vertexAttribPointer(lineProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(lineProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(lineProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.drawArrays(gl.LINES, 0, arrow.numPoints);
-
-  return true;
-};
-
-function renderSegment() {
-  if (!lineProgram.initialized) return false;
-  gl.useProgram(lineProgram.program);
-
-  gl.enableVertexAttribArray(lineProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, segment.vertexBuffer);
-  gl.vertexAttribPointer(lineProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(lineProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, segment.colorBuffer);
-  gl.vertexAttribPointer(lineProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(lineProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(lineProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.drawArrays(gl.LINES, 0, segment.numPoints);
-
-  return true;
-};
-
-function renderSphere() {
-  if (!sphereProgram.initialized) return false;
-  gl.useProgram(sphereProgram.program);
-
-  gl.enableVertexAttribArray(sphereProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, sphere.vertexBuffer);
-  gl.vertexAttribPointer(sphereProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(sphereProgram.normalLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, sphere.normalBuffer);
-  gl.vertexAttribPointer(sphereProgram.normalLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(sphereProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, sphere.colorBuffer);
-  gl.vertexAttribPointer(sphereProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  nMatrix = normalMatrix(mvMatrix, false);
-
-  gl.uniformMatrix4fv(sphereProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(sphereProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniformMatrix4fv(sphereProgram.nMatrixLoc, false, flatten(nMatrix));
-
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sphere.indexBuffer);
-  gl.drawElements(gl.TRIANGLES, sphere.numIndices, gl.UNSIGNED_SHORT, 0);
-
-  return true;
-};
-
-function getFreeDipoleColor() {
-  var U_ = U(freeDipole);
-  var color;
-  var min = 1/5;
-  var max = 3/4;
-  if (U_ > 0) {
-    // Range of U is from -1/3 to 0. Convert to [min, max].
-    var u = Math.pow(Math.abs(U_) * 6, 1/2) * (max-min) + min;
-    color = vec4(1.0, 1.0-u, 1.0-u, 1.0);
-  } else {
-    // Range of U is from -1/3 to 0. Convert to [min, max].
-    var u = Math.pow(Math.abs(U_) * 3, 1/2) * (max-min) + min;
-    color = vec4(1.0-u, 1.0-u, 1.0, 1.0);
-  }
-  return color;
-}
-
-function renderCircle(fixed) {
-  if (!circleProgram.initialized) return;
-  gl.useProgram(circleProgram.program);
-
-  gl.enableVertexAttribArray(circleProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, circle.vertexBuffer);
-  gl.vertexAttribPointer(circleProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  nMatrix = normalMatrix(mvMatrix, false);
-
-  gl.uniformMatrix4fv(circleProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(circleProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniformMatrix4fv(circleProgram.nMatrixLoc, false, flatten(nMatrix));
-
-  // Circle
-  if (fixed) {
-    gl.uniform4fv(circleProgram.colorLoc, flatten(vec4(1.0, 1.0, 1.0, 1.0)));
-  } else {
-    var color = getFreeDipoleColor();
-    gl.uniform4fv(circleProgram.colorLoc, flatten(color));
-  }
-  gl.drawArrays(gl.TRIANGLE_FAN, 0, circle.numCirclePoints);
-
-  // Arrow base and triangle
-  gl.uniform4fv(circleProgram.colorLoc, flatten(vec4(0.2, 0.2, 0.2, 1.0)));
-  gl.drawArrays(gl.TRIANGLE_FAN,
-                circle.numCirclePoints, 4);
-  gl.drawArrays(gl.TRIANGLES, circle.numCirclePoints + 4, 3);
-
-  return true;
-};
-
-function renderCircleOutline(fixed) {
-  if (!circleProgram.initialized) return;
-  gl.useProgram(circleProgram.program);
-
-  gl.enableVertexAttribArray(circleProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, circle.vertexBuffer);
-  gl.vertexAttribPointer(circleProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  nMatrix = normalMatrix(mvMatrix, false);
-
-  gl.uniformMatrix4fv(circleProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(circleProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniformMatrix4fv(circleProgram.nMatrixLoc, false, flatten(nMatrix));
-
-  // Circle
-  if (fixed) {
-    gl.uniform4fv(circleProgram.colorLoc, flatten(vec4(1.0, 1.0, 1.0, 1.0)));
-  } else {
-    var color = getFreeDipoleColor();
-    gl.uniform4fv(circleProgram.colorLoc, flatten(color));
-  }
-  gl.drawArrays(gl.LINE_LOOP, 1, circle.numCirclePoints-1);
-
-  // Arrow base and triangle
-  gl.bindBuffer(gl.ARRAY_BUFFER, phiArrow.vertexBuffer);
-  gl.vertexAttribPointer(circleProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniform4fv(circleProgram.colorLoc, flatten(vec4(0.2, 0.2, 0.2, 1.0)));
-  // gl.drawArrays(gl.LINE_STRIP,
-  //               0, phiArrow.numBasePoints);
-  gl.drawArrays(gl.LINE_LOOP, 0, phiArrow.n);//phiArrow.numBasePoints, phiArrow.numHeadPoints);
-
-  return true;
-};
-
-function renderForceArrow(dipole, f, color, thin) {
-  var mag = 4 * Math.pow(length(f), 1/4);
-  f = mult(normalize(f), mag);
-  return forceArrow.render(dipole.p, f, mesh2Obj, color, true, thin);
-};
-
-function renderTorqueArrow(dipole, t, color, thin) {
-  if (!flatProgram.initialized) return false;
-
-  var p = dipole.p;
-
-  if (length(t) < 0.0000001) {
-    return true;
-  }
-
-  gl.useProgram(flatProgram.program);
-
-  gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, torqueArrow.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  nMatrix = normalMatrix(mvMatrix, false);
-
-  gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.uniform4fv(flatProgram.colorLoc, flatten(color));
-
-  var mag = 0.5 * Math.pow(length(t), 1/3);
-  var deg = Math.min(358, 360 * mag);
-
-  pushMatrix();
-  // get in position
-  mvMatrix = mult(mvMatrix, translate(p[0], p[1], p[2]));
-  // global scale
-  var gs = mesh2Obj;
-  mvMatrix = mult(mvMatrix, scalem(gs, gs, 1));
-
-  if (t[2] < 0) {
-    mvMatrix = mult(mvMatrix, scalem(1, -1, 1));
-  }
-
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 1 + Math.floor(deg) * 2 + 6);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, forceArrow.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-  mvMatrix = mult(mvMatrix, rotateZ(deg));
-  mvMatrix = mult(mvMatrix, translate(torqueArrow.r, 0, 0));
-  mvMatrix = mult(mvMatrix, rotateZ(90));
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.drawArrays(gl.TRIANGLES, 4, 3);
-
-  popMatrix();
-
-  return true;
-};
-
-// Angular velocity - w
-function renderAVArrow(dipole, w, color) {
-  if (!flatProgram.initialized) return false;
-
-  var p = dipole.p;
-
-  if (w == 0) {
-    return true;
-  }
-
-  gl.useProgram(flatProgram.program);
-
-  gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, torqueArrow.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  nMatrix = normalMatrix(mvMatrix, false);
-
-  gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.uniform4fv(flatProgram.colorLoc, flatten(color));
-
-  var mag = 0.5 * Math.abs(w);
-  var deg = Math.min(330, 360 * mag);
-  if (deg < 5) return true;
-
-  pushMatrix();
-  // get in position
-  mvMatrix = mult(mvMatrix, translate(p[0], p[1], p[2]));
-  // global scale
-  var gs = mesh2Obj * 0.5;
-  mvMatrix = mult(mvMatrix, scalem(gs, gs, 1));
-
-  if (w < 0) {
-    mvMatrix = mult(mvMatrix, scalem(1, -1, 1));
-  }
-
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 1 + Math.floor(deg) * 2 + 6);
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, forceArrow.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-  mvMatrix = mult(mvMatrix, rotateZ(deg));
-  mvMatrix = mult(mvMatrix, translate(torqueArrow.r, 0, 0));
-  mvMatrix = mult(mvMatrix, rotateZ(90));
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.drawArrays(gl.TRIANGLES, 4, 3);
-
-  popMatrix();
-
-  return true;
-};
-
-function renderB() {
-  if (!flatProgram.initialized) return false;
-  //--------------------------------
-  // Render the magnetic field lines
-  //--------------------------------
-  gl.useProgram(flatProgram.program);
-
-  gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, sin2.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  // How many diameter units from origin to top of viewport?
-  var k = fh/2;
-  var i = Math.log(k) / Math.log(2);
-  // console.log("fh = " + fh);
-  // console.log("k = " + k);
-  var inc = 1.5;
-  var exp = 1.5;
-  var start = 0.7;
-  var end = 1024 * zoom;
-
-  // s is the distance from the center in factors of D.
-  var myinc = inc;
-  // for (var s = start; s <= end; s *= inc) {
-  for (var s = start; s <= end; s *= myinc) {
-    myinc *= 1.2;
-  // for (var s = start; s <= end; s = Math.pow(s+1, 1.5)) {
-    pushMatrix();
-    mvMatrix = mult(mvMatrix, scalem(s*2, s*2, 1));
-    gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-    gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-
-    gl.uniform4fv(flatProgram.colorLoc, flatten(Bgray));
-
-    gl.drawArrays(gl.LINE_STRIP, 0, sin2.size);
-    popMatrix();
-  }
-
-  // //--------------------------------
-  // // Render the direction arrows
-  // //--------------------------------
-  gl.useProgram(flatProgram.program);
-
-  gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  // gl.bindBuffer(gl.ARRAY_BUFFER, forceArrow.vertexBuffer);
-  gl.bindBuffer(gl.ARRAY_BUFFER, bArrow.vertexBuffer);
-  gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniform4fv(flatProgram.colorLoc, flatten(Bgray));
-
-  // var gs = 0.2 * zoom;
-  var gs = 0.3 * zoom;
-
-  // s is the distance from the center in factors of D.
-  var count = 0;
-  // for (var s = start; s <= end; s *= inc) {
-  // for (var s = start; s <= end; s = Math.pow(s+1, 1.5)) {
-  myinc = inc;
-  for (var s = start; s <= end; s *= myinc) {
-    myinc *= 1.2;
-    if (s > k) {
-      // The angle at which the field line intersects y=k.
-      // The intersection point is s*sin^3(theta)
-      var ytheta = Math.asin(Math.pow(k/s, 1/3));
-      // The angle at which the field line intersects y=k/2
-      var ytheta2 = Math.asin(Math.pow(k/(2*s), 1/3));
-      // var theta = ytheta2;
-      // var theta = ytheta;
-      var theta = ytheta / 1.4;
-
-      var curx = s*Math.sin(ytheta)*Math.sin(ytheta)*Math.cos(ytheta);
-      if (curx > fw/2) {
-          // The angle at which the field line intersects x=fw/2
-          // The equation for this is cos^3(theta) - cos(theta) = -fw/s
-          // which doesn't appear to have a solution using acos. So solve
-          // using a binary search. Start the search at ytheta.
-          var curTheta = ytheta;
-          var dTheta = ytheta;
-          // var x = fw/4;
-          var x = fw/2;
-          while (Math.abs(curx-x) > 0.01) {
-            dTheta /= 2;
-            if (curx > x) {
-              curTheta -= dTheta;
-            } else {
-              curTheta += dTheta;
-            }
-            curx = s*Math.sin(curTheta)*Math.sin(curTheta)*Math.cos(curTheta);
-          }
-          theta = curTheta;
-          var cury = s*Math.sin(theta)*Math.sin(theta)*Math.sin(theta);
-          // The angle at which the field line intersects y=cury/2
-          theta = Math.asin(Math.pow(cury/(2*s), 1/3));
-      }
-      // theta /= 1.4;
-      // theta *= theta;
-      // theta = Math.pow(theta, 1.5);
-
-      for (var d = -1; d <= 1; d += 2) {
-        for (var j = 0; j < 2; ++j) {
-          var phi = theta;
-          if (j == 0) {
-            phi = Math.PI - phi;
-          }
-          phi *= d;
-          var r = s * Math.pow(Math.sin(phi), 2);
-          var p = vec3(r*Math.cos(phi), r*Math.sin(phi), 0);
-          renderBArrow(p, gs);
-        }
-      }
-    } else {
-      count++;
-      renderBArrow(vec3(0, s, 0), gs);
-      renderBArrow(vec3(0, -s, 0), gs);
-    }
-  }
-
-  return true;
-};
-
-function renderDomain() {
-  if (!domainProgram.initialized) return false;
-
-  //--------------------------------
-  // Render the domain shells
-  //--------------------------------
-  gl.useProgram(domainProgram.program);
-
-  gl.enableVertexAttribArray(domainProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, domain.vertexBuffer);
-  gl.vertexAttribPointer(domainProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  pushMatrix();
-  gl.uniformMatrix4fv(domainProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniformMatrix4fv(domainProgram.mvMatrixLoc, false, flatten(mvMatrix));
-
-  var E = freeDipole.E();
-
-  // n is determined from the equation for r_c in the paper by solving
-  // for theta at r = 1.0.
-  // var n = domain.n;
-  var segments = [ { start:0, count:domain.n } ];
-  var cos = (144*E*E-10)/6;
-  if (E < 0 && cos >= -1 && cos <= 1) {
-    var theta = Math.acos(cos) / 2;
-    segments = domain.segments(theta);
-  }
-
-  gl.uniform1f(domainProgram.ELoc, E);
-  gl.uniform1i(domainProgram.plotLoc, 0);
-
-  // fill
-  gl.uniform1i(domainProgram.modeLoc, 2);
-  gl.uniform4fv(domainProgram.colorLoc,
-                // flatten(vec4(0.95, 0.95, 1.0, 1.0)));
-                flatten(domain.fillColor));
-  for (var i = 0; i < segments.length; ++i) {
-    var segment = segments[i];
-    gl.drawArrays(gl.TRIANGLE_STRIP, segment.start, segment.count);
-  }
-  // outline
-  // gl.uniform4fv(domainProgram.colorLoc, flatten(blue));
-  gl.uniform4fv(domainProgram.colorLoc, flatten(domain.outlineColor));
-  for (var mode = 0; mode < 2; ++mode) {
-    gl.uniform1i(domainProgram.modeLoc, mode);
-    for (var i = 0; i < segments.length; ++i) {
-      var segment = segments[i];
-      gl.drawArrays(gl.LINE_STRIP, segment.start, segment.count);
-    }
-  }
-
-  popMatrix();
-
-  return true;
-}
-
-function renderBArrow(p, gs) {
-  if (!flatProgram.initialized) return false;
-
-  // var v = B(fixedDipole.m, p);
-  var v = B(p);
-
-  pushMatrix();
-  // get in position
-  mvMatrix = mult(mvMatrix, translate(p[0], p[1], p[2]));
-  // rotation
-  mvMatrix = mult(mvMatrix, rotateZ(degrees(Math.atan2(v[1], v[0]))));
-  // global scale
-  // mvMatrix = mult(mvMatrix, scalem(gs, gs/1.4, 1));
-  mvMatrix = mult(mvMatrix, scalem(gs, gs/2.8, 1));
-  // move triangle to origin
-  mvMatrix = mult(mvMatrix,
-                  translate(Math.max(-forceArrow.arrowWidth/2), 0, 0));
-
-  gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  popMatrix();
-
-  return true;
-}
-
-function renderTexture() {
-  if (!textureProgram.initialized) return false;
-
-  gl.useProgram(textureProgram.program);
-
-  gl.enableVertexAttribArray(textureProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, square.vBuffer);
-  gl.vertexAttribPointer(textureProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(textureProgram.colorLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, square.cBuffer);
-  gl.vertexAttribPointer(textureProgram.colorLoc, 4, gl.FLOAT, false, 0, 0);
-
-  gl.enableVertexAttribArray(textureProgram.texCoordLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, square.tBuffer);
-  gl.vertexAttribPointer(textureProgram.texCoordLoc, 2, gl.FLOAT, false, 0, 0);
-
-  gl.uniformMatrix4fv(textureProgram.mvMatrixLoc, false, flatten(mvMatrix));
-  gl.uniformMatrix4fv(textureProgram.pMatrixLoc, false, flatten(pMatrix));
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, square.numVertices);
-
-  return true;
-};
 
 function updateForces(updateInitial) {
   updateDebug(freeDipole);
@@ -837,7 +256,6 @@ function updatePositions() {
   } else {
     // Handle separately in case there are collisions.
     var touching = isTouching(fixedDipole.p, freeDipole.p);
-    debugValues.touching = touching;
     if (touching && collisionType == INELASTIC) {
       // "Sliding" case.
       // Spheres are touching and traveling towards each other.
@@ -951,54 +369,11 @@ function event(eventType, dipole) {
     return;
 
   numEvents++;
-  debugValues.num_events = numEvents;
-  debugValues.event_type = eventType;
 
   if (eventType == "collision") {
     plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
   }
-  updateLog(eventType, dipole);
-}
-
-function resetLog() {
-  logString = "";
-  for (var i = 0; i < logEntries.length; i++) {
-    var property = logEntries[i];
-    var label = logger.getLogLabel(property);
-    logString += label + ",";
-  }
-  logString += "\n";
-}
-
-function updateLog(eventType, dipole) {
-  var logValues = new Object();
-  logValues.num_events = numEvents.toFixed(4);
-  logValues.event_type = eventType;
-  logValues.t = elapsedTime.toFixed(4);
-  logValues.r = dipole.r().toFixed(4);
-  logValues.theta = degrees(dipole.theta()).toFixed(4);
-  logValues.phi = degrees(dipole.phi()).toFixed(4);
-  logValues.pr = dipole.pr().toFixed(4);
-  logValues.ptheta = dipole.ptheta().toFixed(4);
-  logValues.pphi = dipole.pphi().toFixed(4);
-  logValues.beta = dipole.beta().toFixed(4);
-  logValues.E = dipole.E().toFixed(8);
-  logValues.dE = (dipole.E()-dipole.E0).toExponential(2);
-
-  for (var i = 0; i < logEntries.length; i++) {
-    var property = logEntries[i];
-    var value = "";
-    if (logValues.hasOwnProperty(property)) {
-      value = logValues[property];
-    }
-    
-    logString += value + ",";
-  }
-  logString += "\n";
-}
-
-function exportLog() {
-  window.open('data:text/csv;charset=utf-8,' + escape(logString));
+  logger.event(eventType, dipole);
 }
 
 function vecString(v, fixed) {
@@ -1019,23 +394,14 @@ function R(dipole) {
 }
 
 function updateDebug(dipole) {
-  var U_ = U(dipole);//-dot(dipole.m, B(fixedDipole.m, dipole.p));
-  var T_ = Trans(dipole);
-  var R_ = R(dipole);
-  var E_ = U_ + T_ + R_;
-  debugValues.E = dipole.E().toFixed(8);
-  debugValues.dE = (E_-dipole.E0).toExponential(2);
+  logger.stateChanged(dipole);
+}
 
-  debugValues.r = dipole.r().toFixed(4);
-  debugValues.theta = degrees(dipole.theta()).toFixed(4);
-  debugValues.phi = degrees(dipole.phi()).toFixed(4);
-  debugValues.beta = degrees(dipole.beta()).toFixed(4);
-
-  debugValues.pr = dipole.pr().toFixed(4);
-  debugValues.ptheta = dipole.ptheta().toFixed(4);
-  debugValues.pphi = dipole.pphi().toFixed(4);
-
-  debugValues.t = elapsedTime.toFixed(4);
+function render() {
+  var success = renderer.doRender();
+  if (!success) {
+    requestAnimFrame(render);
+  }
 }
 
 var ticks = 0;
@@ -1046,10 +412,6 @@ function tick() {
   if (animate) {
     ticks++;
     requestAnimFrame(tick);
-    // The following line was an attempt at getting the animation to continue
-    // even when the tab is inactive, but it appears that setTimeout() has
-    // been updated to have the same optimization as requestAnimFrame.
-    // setTimeout(tick, 1);
     var animSpeed = 500;
 
     var start = new Date().getTime();
@@ -1070,199 +432,13 @@ function tick() {
     tickElapsedTime += (stop-start);
     if (ticks == ticksPerUpdate) {
       var stepsPerSec = (animSpeed*ticksPerUpdate / tickElapsedTime) * 1000;
-      debugValues.fps = (stepsPerSec / 500).toFixed(1);
+      logger.setDebugValue("fps", (stepsPerSec / 500).toFixed(1));
       tickElapsedTime = 0;
       ticks = 0;
     }
 
     updateForces();
     render();
-  }
-}
-
-function renderCircles() {
-  pushMatrix();
-  var s = mesh2Obj;
-  var success = true;
-  var dipoles = [ fixedDipole, freeDipole ];
-  for (var i = 0; i < dipoles.length; i++) { 
-    pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m));
-    if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m);
-      mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
-    }
-    mvMatrix = mult(mvMatrix, scalem(s, s, 1));
-    success = success && renderCircle(i == 0);
-    popMatrix();
-  }
-  popMatrix();
-
-  return success;
-}
-
-function renderCircleOutlines() {
-  pushMatrix();
-  var s = mesh2Obj;
-  var success = true;
-  var dipoles = [ fixedDipole, freeDipole ];
-  for (var i = 0; i < dipoles.length; i++) { 
-    pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m));
-    if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m);
-      mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
-    }
-    mvMatrix = mult(mvMatrix, scalem(s, s, 1));
-    if (i == 0) {
-      success = success && renderCircle(i == 0);
-    } else {
-      success = success && renderCircleOutline(i == 0);
-    }
-    popMatrix();
-  }
-  popMatrix();
-
-  return success;
-}
-
-function renderMagneticField(origin) {
-  var success = true;
-  // Render magnetic field
-  pushMatrix();
-  var sf = 0.05;
-  var inc = 0.08;
-  var ystart = -1.0;// + (inc*100 % origin[1]*100)/100;
-  var xstart = -1.0;
-  var yend = 1.0;
-  var xend = 1.0;
-  for (var y = ystart; y < yend; y += inc) {
-    for (var x = xstart; x < xend; x += inc) {
-      var p = vec3(x, y, 0);
-      // var v = B(fixedDipole.m, p);
-      // var v = BSum(dipoles, p);
-      // var v = B(fixedDipole.m, subtract(p, fixedDipole.p));
-      var v = B(subtract(p, fixedDipole.p));
-      if (v != 0) {
-        pushMatrix();
-        mvMatrix = mult(mvMatrix, translate(p));
-        var vnorm = normalize(v);
-        var phi = Math.acos(dot(vec3(1, 0, 0), vnorm));
-        if (phi != 0) {
-          var axis = cross(vec3(1, 0, 0), vnorm);
-          mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
-        }
-        mvMatrix = mult(mvMatrix, scalem(sf, sf, sf));
-        success = success && renderArrow();
-        popMatrix();
-      }
-    }
-  }
-  popMatrix();
-  return success;
-}
-
-function render() {
-  resize(canvas);
-  aspect = canvas.width/canvas.height;
-
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  var at = vec3(0.0, 0.0, 0.0);
-  var up = vec3(0.0, 1.0, 0.0);
-  var eye = vec3(0, 0, 1);
-
-  if (canvas.width > canvas.height) {
-    fh = frustumDim;
-    fw = (fh*canvas.width)/canvas.height;
-  } else {
-    fw = frustumDim;
-    fh = (fw*canvas.height)/canvas.width;
-  }
-  fw *= zoom;
-  fh *= zoom;
-  pMatrix = ortho(0-fw/2, fw/2, 0-fh/2, fh/2, 0, 2);
-
-  mvMatrix = lookAt(eye, at , up);  
-  if (rotAngle != 0) {
-    mvMatrix = mult(mvMatrix, rotate(rotAngle*180.0/Math.PI, rotVec));
-  }
-  mvMatrix = mult(mvMatrix, rotMatrix);
-
-  gl.disable(gl.DEPTH_TEST);
-
-  var success = true;
-
-  if (showDomain) {
-    success = success && renderDomain();
-  }
-
-  if (showB) {// && !showOutlineMode) {
-    success = success && renderB();
-  }
-
-  if (showPath) {
-    // renderPath();
-    path.render();
-  }
-
-  if (showCircles) {
-    // if (showOutlineMode) {
-    if (showPath) {
-      success = success && renderCircleOutlines();
-    } else {
-      success = success && renderCircles();
-    }
-  }
-  // if (showB && !showOutlineMode) {
-  //   success = success && renderMagneticField(freeDipole.p);
-  // }
-
-  var dipole = freeDipole;
-
-  // if (!showOutlineMode) {
-  if (!showPath) {
-    // force
-    var f = F(fixedDipole, freeDipole, false);
-    success = success && renderForceArrow(
-      dipole, f, Fcolor, 1.0);
-    // render force after friction
-    // f = F(fixedDipole, freeDipole, true);
-    // success = success && renderForceArrow(dipole, f, FnetColor, 0.5);
-
-    // torque
-    var t = T(fixedDipole, freeDipole, false);
-    success = success && renderTorqueArrow(dipole, t, Tcolor, 1.0);
-    // Render torque after friction
-    // var tp = T(fixedDipole, freeDipole, true);
-    // success = success && renderTorqueArrow(dipole, tp, TnetColor, 0.5);
-
-    // render velocity arrow
-    var vl = length(dipole.v) * 100;
-    var vs = mult(normalized(dipole.v), Math.pow(vl, 1/2));
-    // console.log(dipole.v);
-    success = success && forceArrow.render(dipole.p, vs,
-                                           mesh2Obj/2, vcolor, false);
-
-    // render angular velocity arrow
-    var ws = Math.pow(Math.abs(dipole.av), 1/2) * (dipole.av<0?-1:1);
-    success = success && renderAVArrow(dipole, ws, wcolor);
-    // success = success && renderAVArrow(dipole, dipole.av, wcolor);
-
-    // render B at dipole
-    var B1 = B(dipole.p);
-    success = success && forceArrow.render(
-      dipole.p, mult(normalize(B1), 3.1*mesh2Obj), 1/3.7, Bcolor, false);
-  }
-
-  plot.render();
-
-  statePanel.render(debugValues);
-
-  if (!success) {
-    requestAnimFrame(render);
   }
 }
 
@@ -1294,15 +470,7 @@ function zoomOut() {
 
 function adjustSimSpeed(factor) {
   var newSpeed = simSpeed * factor;
-  // for (var i = 0; i < 5; ++i) {
-  //   if (newSpeed > 
-  // }
   document.getElementById("simSpeed").value = newSpeed.toPrecision(2);
-  // document.getElementById("simSpeed").value = newSpeed.toFixed(1);
-  // var fixed = 2;
-  // while (Number(document.getElementById("simSpeed").value) == simSpeed) {
-  //   document.getElementById("simSpeed").value = (simSpeed * factor).toFixed(fixed);
-  // }
   simSpeedChanged();
 }
 
@@ -1357,14 +525,8 @@ function keyDown(e) {
     }
     render();
     break;
-  // case "D".charCodeAt(0):
-  //   showDebug = !showDebug;
-  //   render();
-  //   break;
   case "R".charCodeAt(0):
     reset();
-    // updateForces(true);
-    // render();
     break;
   case "M".charCodeAt(0):
     showB = !showB;
@@ -1386,10 +548,12 @@ function keyDown(e) {
     render();
     break;
   case "S".charCodeAt(0):
-    exportLog();
+    // exportLog();
+    logger.exportLog();
     break;
   case "V".charCodeAt(0):
-    statePanel.toggleVerbose();
+    // loggerPanel.toggleVerbosePanel();
+    logger.toggleVerbosePanel();
     render();
     break;
   // default:
@@ -1606,7 +770,8 @@ function reset() {
 
   updateForces(true);
 
-  resetLog();
+  // resetLog();
+  logger.reset();
   render();
 }
 
@@ -1750,7 +915,6 @@ window.onload = function init() {
   if (!gl) { alert("WebGL isn't available"); }
 
   plot = new Plot();
-  statePanel = new StatePanel();
 
   gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -1766,24 +930,8 @@ window.onload = function init() {
   sphereProgram = new SphereProgram();
   textureProgram = new TextureProgram();
 
-  // var image = document.getElementById("dipoleFieldImage");
-  // configureTexture(image);
-
-  axis = new Axis();
-  floor = new Floor();
-  arrow = new Arrow();
-  segment = new Segment();
-  sphere = new Sphere(1, 200, 200);
-  square = new Square();
-  circle = new Circle();
-  phiArrow = new PhiArrow();
-  // path = new Points(gl);
   path = new Path(gl);
-  sin2 = new Sin2();
-  domain = new Domain(gl);
-  forceArrow = new ForceArrow();
-  bArrow = new BArrow();
-  torqueArrow = new TorqueArrow();
+  renderer = new Renderer(gl);
 
   simSpeed = Number(document.getElementById("simSpeed").value);
   gamma_star = Number(document.getElementById("gamma_star").value);
@@ -1840,79 +988,6 @@ window.onload = function init() {
   //                 simSpeed:50,
   //                 showPath:false };
 
-  // Old demos
-/*
-  demos.demo1 = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.01,
-                  collisionType:"elastic", updateP:true, updateM:true,
-                  simSpeed:1,
-                  showPath:false };
-  demos.demo2 = { r:1.001, theta:0, phi:180, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"elastic", updateP:true, updateM:true,
-                  simSpeed:1,
-                  showPath:false };
-  demos.demo3 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.01,
-                  collisionType:"elastic", updateP:true, updateM:true,
-                  simSpeed:1,
-                  showPath:false };
-  demos.demo4 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
-                  gamma:0.12, gamma_star:0.03, eta:0, eta_star:0, mu_m:0.005,
-                  collisionType:"elastic", updateP:true, updateM:true,
-                  simSpeed:100,
-                  showPath:false };
-  demos.demo5 = { r:1.2, theta:40, phi:-20, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"inelastic", updateP:true, updateM:true, 
-                  simSpeed:4,
-                  showPath:true };
-  demos.demo6 = { r:1.1288129858224798, theta:-21.59883244180276, phi:0, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"inelastic", updateP:true, updateM:true, 
-                  simSpeed:10,
-                  showPath:true };
-  demos.volvo = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  collisionType:"inelastic", updateP:true, updateM:true, 
-                  simSpeed:1,
-                  showPath:true };
-  demos.saab = { r:1.1, theta:90, phi:62, pr:0, ptheta:0, pphi:0,
-                 gamma:0.005, gamma_star:0.005, eta:0, eta_star:0, mu_m:0,
-                 collisionType:"elastic", updateP:true, updateM:true,
-                 simSpeed:1,
-                 showPath:false };
-  demos.hyundai = { r:1.04, theta:-162, phi:30, pr:0, ptheta:0, pphi:0,
-                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                    collisionType:"inelastic", updateP:true, updateM:true,
-                    simSpeed:1,
-                    showPath:false };
-  demos.toyota = { r:1.1, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0.5,
-                   collisionType:"elastic", updateP:true, updateM:true,
-                   simSpeed:1,
-                   showPath:false };
-  demos.bmw = { r:2, theta:2, phi:-30, pr:0, ptheta:0, pphi:0,
-                gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                collisionType:"inelastic", updateP:true, updateM:true,
-                simSpeed:1,
-                showPath:false };
-  demos.fiat = { r:1, theta:145, phi:30, pr:0, ptheta:0.3, pphi:0,
-                 gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                 collisionType:"elastic", updateP:true, updateM:true, 
-                 simSpeed:1,
-                 showPath:true };
-  demos.peugeot = { r:1.2, theta:90, phi:180, pr:0, ptheta:0, pphi:0,
-                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                    collisionType:"inelastic", updateP:true, updateM:true, 
-                    simSpeed:1,
-                    showPath:true };
-  demos.jaguar = { r:1.1288129858224798, theta:-21.59883244180276, phi:0, pr:0, ptheta:0, pphi:0,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1,
-                   collisionType:"inelastic", updateP:true, updateM:true, 
-                   showPath:true };
-*/
   checkDemoCookie();
   demoChanged();
 

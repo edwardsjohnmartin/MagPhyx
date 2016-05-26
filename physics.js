@@ -55,14 +55,10 @@ function F(di, dj, applyFriction) {
         var v_hat = normalized(v_t);
         var F12 = F(di, dj, false);
         var f_m = mult(v_hat, -mu_m * Math.abs(dot(F12, r_hat)));
-        debugValues.f_m = f_m;
+        logger.setDebugValue("f_m", f_m);
         f = add(f, f_m);
       }
     }
-
-    // debugValues.F = f.map(function(n) { return n.toFixed(2) });
-    // debugValues.F_mag = length(f_orig).toFixed(4);
-    // debugValues.F_mag_net = length(f).toFixed(4);
   }
   return f;
 }
@@ -106,18 +102,17 @@ function T(di, dj, applyFriction) {
         var F12 = F(di, dj, false);
         var f_m = mult(v_hat, -mu_m * Math.abs(dot(F12, r_hat)));
         var tau_m = mult(cross(mult(-1, r_hat), f_m), 0.5);
-        debugValues.v_t = vecString(v_t, 2);
-        debugValues.v_hat = vecString(v_hat, 2);
-        debugValues.r_hat = vecString(r_hat, 2);
-        debugValues.f_m = vecString(f_m, 2);
-        debugValues.tau_m = vecString(tau_m, 2);
+        logger.setDebugValue("v_t", vecString(v_t, 2));
+        logger.setDebugValue("v_hat", vecString(v_hat, 2));
+        logger.setDebugValue("r_hat", vecString(r_hat, 2));
+        logger.setDebugValue("f_m", vecString(f_m, 2));
+        logger.setDebugValue("tau_m", vecString(tau_m, 2));
         t = add(t, tau_m);
       }
     }
 
     // Only update values if we're applying friction
-    debugValues.tau = t_orig[2].toFixed(4);
-    // debugValues.tau_net = t[2].toFixed(4);
+    logger.setDebugValue("tau", t_orig[2].toFixed(4));
   }
 
   return t;

@@ -35,7 +35,7 @@ ForceArrow.prototype.render = function(p, v, s, color, outsideCircle, thin) {
   gl.useProgram(flatProgram.program);
 
   gl.enableVertexAttribArray(flatProgram.vertexLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, forceArrow.vertexBuffer);
+  gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
   gl.vertexAttribPointer(flatProgram.vertexLoc, 4, gl.FLOAT, false, 0, 0);
 
   gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));

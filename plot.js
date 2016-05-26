@@ -138,7 +138,7 @@ Plot.prototype.renderPoints = function(pm, mvm) {
 
   this.gl.uniformMatrix4fv(prog.mvMatrixLoc, false, flatten(mvm));
   this.gl.uniformMatrix4fv(prog.pMatrixLoc, false, flatten(pm));
-  this.gl.uniform4fv(prog.colorLoc, flatten(black));
+  this.gl.uniform4fv(prog.colorLoc, flatten(renderer.black));
 
   if (this.points.n > 0) {
     if (this.points.n > 1) {
