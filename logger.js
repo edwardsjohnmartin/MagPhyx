@@ -116,6 +116,10 @@ Logger.prototype.event = function(eventType, dipole) {
   this.logString += "\n";
 }
 
+//------------------------------------------------------------
+// Log file methods
+//------------------------------------------------------------
+
 Logger.prototype.exportLog = function() {
   window.open('data:text/csv;charset=utf-8,' + escape(this.logString));
 }

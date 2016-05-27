@@ -556,6 +556,10 @@ function keyDown(e) {
     logger.toggleVerbosePanel();
     render();
     break;
+  case "O".charCodeAt(0):
+    console.log("Open file");
+    render();
+    break;
   // default:
   //   console.log("Unrecognized key press: " + e.keyCode);
   //   break;
@@ -700,48 +704,28 @@ function resize(canvas) {
   plot.resize();
 }
 
-// function configureTexture(image) {
-//   if (!textureProgram.initialized) {
-//     window.setTimeout(configureTexture, 1000/60, image);
-//     return;
-//   }
-
-//   texture = gl.createTexture();
-//   gl.bindTexture(gl.TEXTURE_2D, texture);
-//   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-//   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB,
-//                 gl.RGB, gl.UNSIGNED_BYTE, image);
-//   gl.generateMipmap(gl.TEXTURE_2D);
-//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-//                    gl.NEAREST_MIPMAP_LINEAR);
-//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-
-//   gl.uniform1i(gl.getUniformLocation(textureProgram.program, "texture"), 0);
-// }
-
 function reset() {
   fixedDipole = new Dipole(vec3(0, 0, 0), vec3(1, 0, 0), true);
 
   var r = Number(document.getElementById("r").value);
   var theta = radians(Number(document.getElementById("theta").value));
-  var x = r*Math.cos(theta);
-  var y = r*Math.sin(theta);
-  var p = vec3(x*D, y*D, 0);
+  // var x = r*Math.cos(theta);
+  // var y = r*Math.sin(theta);
+  // var p = vec3(x*D, y*D, 0);
   var phi = radians(Number(document.getElementById("phi").value));
-  var m = vec3(Math.cos(phi), Math.sin(phi), 0);
-  freeDipole = new Dipole(p, m, false);
+  // var m = vec3(Math.cos(phi), Math.sin(phi), 0);
+  // freeDipole = new Dipole(p, m, false);
 
   var pr = Number(document.getElementById("pr").value);
-  freeDipole.set_pr(pr);
+  // freeDipole.set_pr(pr);
   var ptheta = Number(document.getElementById("ptheta").value);
-  freeDipole.set_ptheta(ptheta);
+  // freeDipole.set_ptheta(ptheta);
   var pphi = Number(document.getElementById("pphi").value);
-  freeDipole.set_pphi(pphi);
+  // freeDipole.set_pphi(pphi);
 
-  freeDipole.resetE0();
+  // freeDipole.resetE0();
+
+  freeDipole = createDipole(r, theta, phi, pr, ptheta, pphi);
 
   // Update debug values
   F(fixedDipole, freeDipole, true);
@@ -896,6 +880,38 @@ function checkDemoCookie() {
   }
 }
 
+// read event file
+function handleEventFileSelect(evt) {
+  var file = evt.target.files[0];
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    plot.clear();
+
+    var text = e.target.result;
+    var lines = text.split(/\r\n|\n/);
+    var headers = lines[0].split(',');
+    for (var i = 1; i < lines.length; ++i) {
+      var tokens = lines[i].split(',');
+      if (tokens[1] == "collision") {
+        var j = 3;
+        var r = Number(tokens[j++]);
+        var theta = radians(Number(tokens[j++]));
+        var phi = radians(Number(tokens[j++]));
+        var pr = Number(tokens[j++]);
+        var ptheta = Number(tokens[j++]);
+        var pphi = Number(tokens[j++]);
+        var dipole = createDipole(r, theta, phi, pr, ptheta, pphi);
+        plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
+      }
+    }
+
+    console.log("Done reading");
+    render();
+  };
+  reader.readAsText(file);
+}
+
+// main function
 window.onload = function init() {
   canvas = document.getElementById("gl-canvas");
 
@@ -913,6 +929,9 @@ window.onload = function init() {
 
   gl = WebGLUtils.setupWebGL(canvas);
   if (!gl) { alert("WebGL isn't available"); }
+
+  document.getElementById('eventFile').addEventListener(
+    'change', handleEventFileSelect, false);
 
   plot = new Plot();
 

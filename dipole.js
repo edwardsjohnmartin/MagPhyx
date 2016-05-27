@@ -1,3 +1,19 @@
+// Angles are in radians.
+function createDipole(r, theta, phi, pr, ptheta, pphi) {
+  var x = r*Math.cos(theta);
+  var y = r*Math.sin(theta);
+  var p = vec3(x*D, y*D, 0);
+  var m = vec3(Math.cos(phi), Math.sin(phi), 0);
+  var dipole = new Dipole(p, m, false);
+
+  dipole.set_pr(pr);
+  dipole.set_ptheta(ptheta);
+  dipole.set_pphi(pphi);
+  dipole.resetE0();
+
+  return dipole;
+}
+
 // Dipole has properties p, r, theta
 var Dipole = function(p, m, fixed) {
   // position
