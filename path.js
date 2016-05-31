@@ -12,6 +12,9 @@ Path.prototype.push = function(p) {
 
 Path.prototype.render = function() {
   if (!flatProgram.initialized) return false;
+
+  if (this.points.n == 0) return true;
+
   gl.useProgram(flatProgram.program);
 
   pushMatrix();

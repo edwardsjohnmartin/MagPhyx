@@ -698,7 +698,6 @@ Renderer.prototype.doRender = function() {
   }
 
   if (showCircles) {
-    // if (showOutlineMode) {
     if (showPath) {
       success = success && this.renderCircleOutlines();
     } else {
