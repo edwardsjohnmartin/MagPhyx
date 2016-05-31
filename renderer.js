@@ -146,7 +146,8 @@ Renderer.prototype.renderSphere = function() {
 }
 
 Renderer.prototype.getFreeDipoleColor = function() {
-  var U_ = U(freeDipole);
+  // var U_ = U(freeDipole);
+  var U_ = freeDipole.V();
   var color;
   var min = 1/5;
   var max = 3/4;
@@ -232,15 +233,17 @@ Renderer.prototype.renderCircleOutline = function(fixed) {
 Renderer.prototype.renderForceArrow = function(dipole, f, color, thin) {
   var mag = 4 * Math.pow(length(f), 1/4);
   f = mult(normalize(f), mag);
-  return this.forceArrow.render(dipole.p, f, mesh2Obj, color, true, thin);
+  return this.forceArrow.render(dipole.p(), f, mesh2Obj, color, true, thin);
 }
 
 Renderer.prototype.renderTorqueArrow = function(dipole, t, color, thin) {
   if (!flatProgram.initialized) return false;
 
-  var p = dipole.p;
+  var p = dipole.p();
 
-  if (length(t) < 0.0000001) {
+  // console.log(t);
+  // if (length(t) < 0.0000001) {
+  if (Math.abs(t) < 0.0000001) {
     return true;
   }
 
@@ -256,7 +259,8 @@ Renderer.prototype.renderTorqueArrow = function(dipole, t, color, thin) {
 
   gl.uniform4fv(flatProgram.colorLoc, flatten(color));
 
-  var mag = 0.5 * Math.pow(length(t), 1/3);
+  // var mag = 0.5 * Math.pow(length(t), 1/3);
+  var mag = 0.5 * Math.pow(Math.abs(t), 1/3);
   var deg = Math.min(358, 360 * mag);
 
   pushMatrix();
@@ -266,7 +270,8 @@ Renderer.prototype.renderTorqueArrow = function(dipole, t, color, thin) {
   var gs = mesh2Obj;
   mvMatrix = mult(mvMatrix, scalem(gs, gs, 1));
 
-  if (t[2] < 0) {
+  // if (t[2] < 0) {
+  if (t < 0) {
     mvMatrix = mult(mvMatrix, scalem(1, -1, 1));
   }
 
@@ -290,7 +295,7 @@ Renderer.prototype.renderTorqueArrow = function(dipole, t, color, thin) {
 Renderer.prototype.renderAVArrow = function(dipole, w, color) {
   if (!flatProgram.initialized) return false;
 
-  var p = dipole.p;
+  var p = dipole.p();
 
   if (w == 0) {
     return true;
@@ -519,8 +524,8 @@ Renderer.prototype.renderDomain = function() {
 Renderer.prototype.renderBArrow = function(p, gs) {
   if (!flatProgram.initialized) return false;
 
-  // var v = B(fixedDipole.m, p);
-  var v = B(p);
+  // var v = B(fixedDipole.m(), p);
+  var v = B_dir_pos(p);
 
   pushMatrix();
   // get in position
@@ -575,10 +580,10 @@ Renderer.prototype.renderCircles = function() {
   var dipoles = [ fixedDipole, freeDipole ];
   for (var i = 0; i < dipoles.length; i++) { 
     pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m));
+    mvMatrix = mult(mvMatrix, translate(dipoles[i].p()));
+    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m()));
     if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m);
+      var axis = cross(vec3(1, 0, 0), dipoles[i].m());
       mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
     }
     mvMatrix = mult(mvMatrix, scalem(s, s, 1));
@@ -597,10 +602,10 @@ Renderer.prototype.renderCircleOutlines = function() {
   var dipoles = [ fixedDipole, freeDipole ];
   for (var i = 0; i < dipoles.length; i++) { 
     pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m));
+    mvMatrix = mult(mvMatrix, translate(dipoles[i].p()));
+    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m()));
     if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m);
+      var axis = cross(vec3(1, 0, 0), dipoles[i].m());
       mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
     }
     mvMatrix = mult(mvMatrix, scalem(s, s, 1));
@@ -629,10 +634,7 @@ Renderer.prototype.renderMagneticField = function(origin) {
   for (var y = ystart; y < yend; y += inc) {
     for (var x = xstart; x < xend; x += inc) {
       var p = vec3(x, y, 0);
-      // var v = B(fixedDipole.m, p);
-      // var v = BSum(dipoles, p);
-      // var v = B(fixedDipole.m, subtract(p, fixedDipole.p));
-      var v = B(subtract(p, fixedDipole.p));
+      var v = B(subtract(p, fixedDipole.p()));
       if (v != 0) {
         pushMatrix();
         mvMatrix = mult(mvMatrix, translate(p));
@@ -708,28 +710,29 @@ Renderer.prototype.doRender = function() {
 
   if (!showPath) {
     // force
-    var f = F(fixedDipole, freeDipole, false);
+    var f = F(freeDipole, false);
     success = success && this.renderForceArrow(
       dipole, f, this.Fcolor, 1.0);
 
     // torque
-    var t = T(fixedDipole, freeDipole, false);
+    var t = T(freeDipole, false);
     success = success && this.renderTorqueArrow(dipole, t, this.Tcolor, 1.0);
 
     // render velocity arrow
-    var vl = length(dipole.v) * 100;
-    var vs = mult(normalized(dipole.v), Math.pow(vl, 1/2));
-    success = success && this.forceArrow.render(dipole.p, vs,
+    var vl = length(dipole.v()) * 100;
+    var vs = mult(normalized(dipole.v()), Math.pow(vl, 1/2));
+    success = success && this.forceArrow.render(dipole.p(), vs,
                                                 mesh2Obj/2, this.vcolor, false);
 
     // render angular velocity arrow
-    var ws = Math.pow(Math.abs(dipole.av), 1/2) * (dipole.av<0?-1:1);
+    var ws = Math.pow(Math.abs(dipole.av()), 1/2) * (dipole.av()<0?-1:1);
     success = success && this.renderAVArrow(dipole, ws, this.wcolor);
 
     // render B at dipole
-    var B1 = B(dipole.p);
+    // var B1 = B(dipole.p());
+    var B1 = B_dir_pos(dipole.p());
     success = success && this.forceArrow.render(
-      dipole.p, mult(normalize(B1), 3.1*mesh2Obj), 1/3.7, this.Bcolor, false);
+      dipole.p(), mult(normalize(B1), 3.1*mesh2Obj), 1/3.7, this.Bcolor, false);
   }
 
   plot.render();

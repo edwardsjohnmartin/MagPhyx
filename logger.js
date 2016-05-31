@@ -84,13 +84,13 @@ Logger.prototype.setDebugValue = function(name, value) {
 
 // Called anytime the free dipole moves.
 Logger.prototype.stateChanged = function(dipole) {
-  this.state.r = dipole.r().toFixed(4);
-  this.state.theta = degrees(dipole.theta()).toFixed(4);
-  this.state.phi = degrees(dipole.phi()).toFixed(4);
-  this.state.pr = dipole.pr().toFixed(4);
-  this.state.ptheta = dipole.ptheta().toFixed(4);
-  this.state.pphi = dipole.pphi().toFixed(4);
-  this.state.beta = degrees(dipole.beta()).toFixed(4);
+  this.state.r = dipole.r.toFixed(4);
+  this.state.theta = degrees(dipole.theta).toFixed(4);
+  this.state.phi = degrees(dipole.phi).toFixed(4);
+  this.state.pr = dipole.pr.toFixed(4);
+  this.state.ptheta = dipole.ptheta.toFixed(4);
+  this.state.pphi = dipole.pphi.toFixed(4);
+  this.state.beta = degrees(get_beta(dipole)).toFixed(4);
   this.state.E = dipole.E().toFixed(8);
   this.state.dE = (dipole.E()-dipole.E0).toExponential(2);
 
