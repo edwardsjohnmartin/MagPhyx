@@ -411,7 +411,7 @@ var loggedPoint = vec3(0, 0, 0);
 function tick() {
   if (animate) {
     ticks++;
-    requestAnimFrame(tick);
+    requestAnimationFrame(tick);
     var animSpeed = 500;
 
     var start = new Date().getTime();
@@ -513,6 +513,10 @@ function keyDown(e) {
     break;
   case " ".charCodeAt(0):
     toggleAnimate();
+    break;
+  case "A".charCodeAt(0):
+    plot.toggleAnimate();
+    plot.tick();
     break;
   case "N".charCodeAt(0):
     var nn = 1;
@@ -892,7 +896,7 @@ function handleEventFileSelect(evt) {
     var headers = lines[0].split(',');
     for (var i = 1; i < lines.length; ++i) {
       var tokens = lines[i].split(',');
-      if (tokens[1] == "collision") {
+      if (tokens[1] == "collision" || tokens[1] == "step") {
         var j = 3;
         var r = Number(tokens[j++]);
         var theta = radians(Number(tokens[j++]));

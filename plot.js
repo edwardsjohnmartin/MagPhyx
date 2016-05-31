@@ -22,6 +22,8 @@ var Plot = function() {
   //  Load shaders and initialize attribute buffers
   this.program = new FlatProgram(this.gl);
   this.domainProgram = new DomainProgram(this.gl);
+
+  this.anim_n = -1;
 }
 
 //------------------------------------------------------------
@@ -143,14 +145,41 @@ Plot.prototype.renderPoints = function(pm, mvm) {
   if (this.points.n > 0) {
     if (this.points.n > 1) {
       this.gl.uniform1f(prog.pointSize, 1);
-      this.gl.drawArrays(this.gl.POINTS, 0, this.points.n-1);
+      if (this.anim_n > -1) {
+        this.gl.drawArrays(this.gl.POINTS, 0, this.anim_n);
+        this.anim_n++;
+        if (this.anim_n >= this.points.n-1) {
+          this.anim_n = -1;
+        }
+      } else {
+        this.gl.drawArrays(this.gl.POINTS, 0, this.points.n-1);
+      }
     }
 
     this.gl.uniform1f(prog.pointSize, 3);
-    this.gl.drawArrays(this.gl.POINTS, this.points.n-1, 1);
+    if (this.anim_n == -1) {
+      this.gl.drawArrays(this.gl.POINTS, this.points.n-1, 1);
+    }
   }
 
   return true;
+}
+
+Plot.prototype.toggleAnimate = function() {
+  if (this.anim_n == -1) {
+    this.anim_n = 1;
+  } else {
+    this.anim_n = -1;
+  }
+  this.render();
+}
+
+Plot.prototype.tick = function() {
+  if (this.anim_n > -1) {
+    var that = this;
+    requestAnimationFrame(function() { that.tick() });
+    this.render();
+  }
 }
 
 Plot.prototype.render = function() {
