@@ -34,7 +34,6 @@ var canvasWidth, canvasHeight;
 var fw, fh;
 var gl;
 
-var fixedDipole;
 var freeDipole;
 
 var path;
@@ -99,121 +98,6 @@ function pushMatrix() {
 }
 function popMatrix() {
   mvMatrix = matrixStack.pop();
-}
-
-function updateForces(updateInitial) {
-  updateDebug(freeDipole);
-}
-
-// Computes the acceleration of a free dipole at position p with moment m
-function a(p, v, theta, dt) {
-  var m = vec3(Math.cos(theta), Math.sin(theta), 0);
-  var dipole = new Dipole(p, m, false);
-  dipole.v = v;
-  return F(fixedDipole, dipole, true);
-}
-
-// Angular acceleration from the torque
-function alpha(p, v, theta, alphaValue, dt) {
-  var m = vec3(Math.cos(theta), Math.sin(theta), 0);
-  var dipole = new Dipole(p, m, false);
-  dipole.av = alphaValue;
-  var t = mult(T(fixedDipole, dipole, true), 10);
-  var ret = length(t) * ((t[2] < 0) ? -1 : 1);
-  return ret;
-}
-
-// function rk4(x, v, theta, omega, dt) {//, m) {
-function rk4(dipole, dt) {//, m) {
-  var x = dipole.p;
-  var v = dipole.v;
-  var theta = dipole.phi();
-  var omega = dipole.av;
-
-  // Returns final (position, velocity) tuple after
-  // time dt has passed.
-
-  // x: initial position (number-like object)
-  // v: initial velocity (number-like object)
-  // a: acceleration
-  // theta: initial moment
-  // omega: initial angular velocity
-  // alpha: angular acceleration
-  // dt: timestep (number)
-  var x1 = x;
-  var v1 = v;
-  var theta1 = theta;
-  var omega1 = omega;
-  var a1 = a(x1, v1, theta1, 0);
-  var alpha1 = alpha(x1, v1, theta1, omega1, 0);
-
-  var x2 = add(x, mult(v1, 0.5*dt));
-  var v2 = add(v, mult(a1, 0.5*dt));
-  var theta2 = theta + omega1 * 0.5*dt;
-  var omega2 = omega + alpha1 * 0.5*dt;
-  var a2 = a(x2, v2, theta2, dt/2.0);
-  var alpha2 = alpha(x2, v2, theta2, omega2, dt/2.0);
-
-  var x3 = add(x, mult(v2, 0.5*dt));
-  var v3 = add(v, mult(a2, 0.5*dt));
-  var theta3 = theta + omega2 * 0.5*dt;
-  var omega3 = omega + alpha2 * 0.5*dt;
-  var a3 = a(x3, v3, theta3, dt/2.0);
-  var alpha3 = alpha(x3, v3, theta3, omega3, dt/2.0);
-
-  var x4 = add(x, mult(v3, dt));
-  var v4 = add(v, mult(a3, dt));
-  var theta4 = theta + omega3 * dt;
-  var omega4 = omega + alpha3 * dt;
-  var a4 = a(x4, v4, theta4, dt);
-  var alpha4 = alpha(x4, v4, theta4, omega4, dt);
-
-  var xf =
-    add(x, mult(dt/6.0, add(v1, add(mult(2, v2), add(mult(2, v3), v4)))));
-  var vf =
-    add(v, mult(dt/6.0, add(a1, add(mult(2, a2), add(mult(2, a3), a4)))));
-  var thetaf = theta + (dt/6.0) * (omega1 + 2*omega2 + 2*omega3 + omega4);
-  var omegaf = omega + (dt/6.0) * (alpha1 + 2*alpha2 + 2*alpha3 + alpha4);
-
-  var ret = new Object();
-  ret.p = xf;
-  ret.v = vf;
-  ret.theta = thetaf;
-  ret.omega = omegaf;
-  return ret;
-}
-
-// Given a sphere c1 and translation dx, and given that c1 is not
-// intersecting c0, return the t parameter at which c1 will intersect c0.
-function computeIntersection(c0, c1, dx) {
-  // Find the distance a from the center of the fixed dipole
-  // to the displacement line.
-  //
-  //        dx  ____ c1+dx
-  //       ____/
-  //   c1 /_________ c0
-  //           R10
-
-  // Change dx such that dipole runs into other dipole.
-  var x0 = c0[0];
-  var y0 = c0[1];
-  var x1 = c1[0];
-  var y1 = c1[1];
-  var xw = dx[0];
-  var yw = dx[1];
-  // a, b and c for quadratic equation
-  var qa = xw*xw + yw*yw;
-  var qb = 2 * (x1*xw-x0*xw) + 2 * (y1*yw-y0*yw);
-  var qc = x1*x1-2*x1*x0+x0*x0 + y1*y1-2*y1*y0+y0*y0 - D*D;
-  var disc = qb*qb - 4*qa*qc; // discriminant
-  if (disc < 0) return NaN;
-  var qt0 = (-qb + Math.sqrt(disc)) / (2 * qa);
-  var qt1 = (-qb - Math.sqrt(disc)) / (2 * qa);
-  var qt = Math.min(qt0, qt1);
-  if (qt < 0) {
-    qt = Math.max(qt0, qt1);
-  }
-  return qt;
 }
 
 function isTouching(fixed, free) {
@@ -364,7 +248,7 @@ function isNegativeZeroCrossing(a, b) {
 //   }
 // }
 
-function updatePositions() {
+function doStep() {
   var oldFreeDipole = freeDipole.copy();
 
   var oldElapsedTime = elapsedTime;
@@ -372,6 +256,7 @@ function updatePositions() {
   // elapsedTime += dt;
 
   var stepper = new Stepper(freeDipole, dt, "bouncing");
+  // var stepper = new Stepper(freeDipole, dt, "sliding");
   stepper.step();
 
   if (stepper.d.r < 1) {
@@ -386,17 +271,19 @@ function updatePositions() {
       }
     }
 
-    // event.logCollision(stepper.d, stepper.t);
+    event("collision", stepper.d);
 
     // Specular reflection
     stepper.d.pr = -stepper.d.pr;
+  } else if (stepper.d.r == 1) {
+    event("slide", stepper.d);
   } else {
-    // const bool fired = event.log(stepper.d, stepper.t);
+    // console.log("Not zero");
   }
 
   freeDipole = stepper.d;
+  logger.stateChanged(freeDipole);
   elapsedTime += stepper.t;
-  updateDebug(freeDipole);
 
   if (length(subtract(loggedPoint, freeDipole.p())) > 0.01) {
     path.push(vec4(freeDipole.p()[0], freeDipole.p()[1], 0, 1));
@@ -484,37 +371,37 @@ function updatePositions() {
 
   // updateDebug(freeDipole);
 
-  // // Log zero crossings
-  // if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.theta();});
-  //   event("theta = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.phi();});
-  //   event("phi = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.beta();});
-  //   event("beta = 0", logDipole);
-  // }
-  // if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.pr();});
-  //   event("pr = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
-  //   event("ptheta = 0", logDipole);
-  // }
-  // if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
-  //   var logDipole = Dipole.interpolateZeroCrossing(
-  //     oldFreeDipole, freeDipole, function(d) {return d.pphi();});
-  //   event("pphi = 0", logDipole);
-  // }
+  // Log zero crossings
+  if (isZeroCrossing(oldFreeDipole.theta, freeDipole.theta)) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.theta;});
+    event("theta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.phi, freeDipole.phi)) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.phi;});
+    event("phi = 0", logDipole);
+  }
+  if (isZeroCrossing(get_beta(oldFreeDipole), get_beta(freeDipole))) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return get_beta(d);});
+    event("beta = 0", logDipole);
+  }
+  if (isNegativeZeroCrossing(oldFreeDipole.pr, freeDipole.pr)) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.pr;});
+    event("pr = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.ptheta, freeDipole.ptheta)) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.ptheta;});
+    event("ptheta = 0", logDipole);
+  }
+  if (isZeroCrossing(oldFreeDipole.pphi, freeDipole.pphi)) {
+    var logDipole = Dipole.interpolateZeroCrossing(
+      oldFreeDipole, freeDipole, function(d) {return d.pphi;});
+    event("pphi = 0", logDipole);
+  }
 }
 
 function event(eventType, dipole) {
@@ -523,30 +410,14 @@ function event(eventType, dipole) {
 
   numEvents++;
 
-  if (eventType == "collision") {
-    plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
+  if (eventType == "collision" || eventType == "slide") {
+    plot.push(vec4(dipole.theta, get_beta(dipole), 0, 1));
   }
   logger.event(eventType, dipole);
 }
 
 function vecString(v, fixed) {
   return v.map(function(n) { return n.toFixed(fixed) });
-}
-
-// function U(dipole) {
-//   return -dot(dipole.m, B(dipole.p));
-// }
-
-// function Trans(dipole) {
-//   return Math.pow(length(dipole.v), 2) / 2;
-// }
-
-// function R(dipole) {
-//   return (dipole.av * dipole.av) / 20;
-// }
-
-function updateDebug(dipole) {
-  logger.stateChanged(dipole);
 }
 
 function render() {
@@ -572,7 +443,7 @@ function tick() {
     // while (once || !document.getElementById("showAnimation").checked) {
     once = false;
     for (var i = 0; i < animSpeed; ++i) {
-      updatePositions();
+      doStep();
       // if (length(subtract(loggedPoint, freeDipole.p())) > 0.01) {
       //   console.log("here");
       //   path.push(vec4(freeDipole.p()[0], freeDipole.p()[1], 0, 1));
@@ -590,7 +461,6 @@ function tick() {
       ticks = 0;
     }
 
-    updateForces();
     render();
   }
 }
@@ -625,6 +495,10 @@ function adjustSimSpeed(factor) {
   var newSpeed = simSpeed * factor;
   document.getElementById("simSpeed").value = newSpeed.toPrecision(2);
   simSpeedChanged();
+}
+
+function exportLog() {
+  logger.exportLog();
 }
 
 function keyDown(e) {
@@ -677,8 +551,7 @@ function keyDown(e) {
       nn = 100;
     }
     for (var i = 0; i < nn; i++) {
-      updatePositions();
-      updateForces(false);
+      doStep();
     }
     render();
     break;
@@ -705,8 +578,7 @@ function keyDown(e) {
     render();
     break;
   case "S".charCodeAt(0):
-    // exportLog();
-    logger.exportLog();
+    exportLog();
     break;
   case "V".charCodeAt(0):
     // loggerPanel.toggleVerbosePanel();
@@ -826,12 +698,11 @@ function rotatePoint(mousePos, dipole) {
 }
 
 function movePoint(p, dipole) {
-  var v = subtract(vec3(p[0], p[1], 0), fixedDipole.p);
+  // var v = subtract(vec3(p[0], p[1], 0), fixedDipole.p);
+  var v = vec3(p[0], p[1], 0);
   if (length(v) < D) {
-    p = add(fixedDipole.p, mult(normalize(v), D));
+    p = add(vec3(0, 0, 0), mult(normalize(v), D));
   }
-  // document.getElementById("x").value = p[0];
-  // document.getElementById("y").value = p[1];
   document.getElementById("r").value = length(p);
   document.getElementById("theta").value = degrees(Math.atan2(p[1], p[0]));
   reset();
@@ -862,9 +733,6 @@ function resize(canvas) {
 }
 
 function reset() {
-  // fixedDipole = new Dipole(vec3(0, 0, 0), vec3(1, 0, 0), true);
-  fixedDipole = new Dipole(0, 0, 0, 0, 0, 0);
-
   var r = Number(document.getElementById("r").value);
   var theta = radians(Number(document.getElementById("theta").value));
   var phi = radians(Number(document.getElementById("phi").value));
@@ -872,11 +740,11 @@ function reset() {
   var ptheta = Number(document.getElementById("ptheta").value);
   var pphi = Number(document.getElementById("pphi").value);
 
-  freeDipole = new Dipole(r, theta, phi, pr, ptheta, pphi);
+  freeDipole = new Dipole(r, theta, phi, pr, ptheta, pphi, null);
 
   // Update debug values
-  F(fixedDipole, freeDipole, true);
-  T(fixedDipole, freeDipole, true);
+  F(freeDipole, true);
+  T(freeDipole, true);
 
   updateP = document.getElementById("updateP").checked;
   updateM = document.getElementById("updateM").checked;
@@ -899,9 +767,7 @@ function reset() {
   elapsedTime = 0;
   setAnimate(false);
 
-  updateForces(true);
-
-  // resetLog();
+  logger.stateChanged(freeDipole);
   logger.reset();
   render();
 }
@@ -1145,6 +1011,10 @@ window.onload = function init() {
                   simSpeed:1, collisionType:"elastic",
                   updateP:true, updateM:true, showPath:false };
   demos.demo10 = { r:1, theta:90, phi:0, pr:0, ptheta:0, pphi:0,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo11 = { r:1, theta:0, phi:0, pr:0, ptheta:0.92, pphi:0,
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };

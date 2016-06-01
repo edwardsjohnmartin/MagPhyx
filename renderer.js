@@ -146,8 +146,7 @@ Renderer.prototype.renderSphere = function() {
 }
 
 Renderer.prototype.getFreeDipoleColor = function() {
-  // var U_ = U(freeDipole);
-  var U_ = freeDipole.V();
+  var U_ = get_U(freeDipole);
   var color;
   var min = 1/5;
   var max = 3/4;
@@ -481,19 +480,19 @@ Renderer.prototype.renderDomain = function() {
   gl.uniformMatrix4fv(domainProgram.pMatrixLoc, false, flatten(pMatrix));
   gl.uniformMatrix4fv(domainProgram.mvMatrixLoc, false, flatten(mvMatrix));
 
-  var E = freeDipole.E();
+  var E_ = get_E(freeDipole);
 
   // n is determined from the equation for r_c in the paper by solving
   // for theta at r = 1.0.
   // var n = domain.n;
   var segments = [ { start:0, count:this.domain.n } ];
-  var cos = (144*E*E-10)/6;
-  if (E < 0 && cos >= -1 && cos <= 1) {
+  var cos = (144*E_*E_-10)/6;
+  if (E_ < 0 && cos >= -1 && cos <= 1) {
     var theta = Math.acos(cos) / 2;
     segments = this.domain.segments(theta);
   }
 
-  gl.uniform1f(domainProgram.ELoc, E);
+  gl.uniform1f(domainProgram.ELoc, E_);
   gl.uniform1i(domainProgram.plotLoc, 0);
 
   // fill
@@ -577,13 +576,14 @@ Renderer.prototype.renderCircles = function() {
   pushMatrix();
   var s = mesh2Obj;
   var success = true;
-  var dipoles = [ fixedDipole, freeDipole ];
-  for (var i = 0; i < dipoles.length; i++) { 
+  var positions = [ vec3(0,0,0), freeDipole.p() ];
+  var moments = [ vec3(1,0,0), freeDipole.m() ];
+  for (var i = 0; i < positions.length; i++) { 
     pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p()));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m()));
+    mvMatrix = mult(mvMatrix, translate(positions[i]));
+    var phi = Math.acos(dot(vec3(1, 0, 0), moments[i]));
     if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m());
+      var axis = cross(vec3(1, 0, 0), moments[i]);
       mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
     }
     mvMatrix = mult(mvMatrix, scalem(s, s, 1));
@@ -599,13 +599,14 @@ Renderer.prototype.renderCircleOutlines = function() {
   pushMatrix();
   var s = mesh2Obj;
   var success = true;
-  var dipoles = [ fixedDipole, freeDipole ];
-  for (var i = 0; i < dipoles.length; i++) { 
+  var positions = [ vec3(0,0,0), freeDipole.p() ];
+  var moments = [ vec3(1,0,0), freeDipole.m() ];
+  for (var i = 0; i < positions.length; i++) { 
     pushMatrix();
-    mvMatrix = mult(mvMatrix, translate(dipoles[i].p()));
-    var phi = Math.acos(dot(vec3(1, 0, 0), dipoles[i].m()));
+    mvMatrix = mult(mvMatrix, translate(positions[i]));
+    var phi = Math.acos(dot(vec3(1, 0, 0), moments[i]));
     if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), dipoles[i].m());
+      var axis = cross(vec3(1, 0, 0), moments[i]);
       mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
     }
     mvMatrix = mult(mvMatrix, scalem(s, s, 1));
@@ -634,7 +635,8 @@ Renderer.prototype.renderMagneticField = function(origin) {
   for (var y = ystart; y < yend; y += inc) {
     for (var x = xstart; x < xend; x += inc) {
       var p = vec3(x, y, 0);
-      var v = B(subtract(p, fixedDipole.p()));
+      // var v = B(subtract(p, fixedDipole.p()));
+      var v = B_dir_pos(p);
       if (v != 0) {
         pushMatrix();
         mvMatrix = mult(mvMatrix, translate(p));

@@ -91,8 +91,8 @@ Logger.prototype.stateChanged = function(dipole) {
   this.state.ptheta = dipole.ptheta.toFixed(4);
   this.state.pphi = dipole.pphi.toFixed(4);
   this.state.beta = degrees(get_beta(dipole)).toFixed(4);
-  this.state.E = dipole.E().toFixed(8);
-  this.state.dE = (dipole.E()-dipole.E0).toExponential(2);
+  this.state.E = get_E(dipole).toFixed(8);
+  this.state.dE = (get_E(dipole)-dipole.E0).toExponential(2);
 
   this.state.t = elapsedTime.toFixed(4);
 }

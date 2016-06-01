@@ -51,5 +51,8 @@ Stepper.prototype.rk4 = function() {
     ret[i] = x[i] + (this.h/6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
   }
 
-  return new Dipole(ret[0], ret[1], ret[2], ret[3], ret[4], ret[5]);
+  ret[1] = normalize_angle(ret[1]);
+  ret[2] = normalize_angle(ret[2]);
+
+  return new Dipole(ret[0], ret[1], ret[2], ret[3], ret[4], ret[5], this.d);
 }

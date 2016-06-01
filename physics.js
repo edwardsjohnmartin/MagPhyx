@@ -82,7 +82,24 @@ function B_angle(d) {
 }
 
 function get_beta(d) {
-  return d.phi - B_angle(d);
+  return normalize_angle(d.phi - B_angle(d));
+}
+
+// Kinetic energy
+function get_T(d) {
+  return d.pr*d.pr/2 + (d.ptheta*d.ptheta)/(2*d.r*d.r) +
+    5*d.pphi*d.pphi;
+}
+
+// Potential energy
+function get_U(d) {
+  return -(Math.cos(d.phi) +
+           3*Math.cos(d.phi-2*d.theta))/(12*d.r*d.r*d.r);
+}
+
+// Total energy
+function get_E(d) {
+  return get_T(d) + get_U(d);
 }
 
 // Force dipole d. Return value in the form

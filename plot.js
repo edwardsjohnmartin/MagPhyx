@@ -88,20 +88,20 @@ Plot.prototype.renderDomain = function(pm, mvm) {
   this.gl.uniformMatrix4fv(prog.pMatrixLoc, false, flatten(pm));
   this.gl.uniformMatrix4fv(prog.mvMatrixLoc, false, flatten(mvm));
 
-  var E = freeDipole.E();
+  var E_ = get_E(freeDipole);
 
   var n = this.domain.n;
   var segments = [ { start:0, count:n/2-2 },
                    { start:n/2+2, count:n/2-2 }];
   // n is determined from the equation for r_c in the paper by solving
   // for theta at r = 1.0.
-  var cos = (144*E*E-10)/6;
-  if (E < 0 && cos >= -1 && cos <= 1) {
+  var cos = (144*E_*E_-10)/6;
+  if (E_ < 0 && cos >= -1 && cos <= 1) {
     var theta = Math.acos(cos) / 2;
     segments = this.domain.wrappedSegments(theta);
   }
 
-  this.gl.uniform1f(prog.ELoc, E);
+  this.gl.uniform1f(prog.ELoc, E_);
   this.gl.uniform1i(prog.plotLoc, 1);
 
   // fill
