@@ -63,7 +63,8 @@ var button = 0;
 var rotVec = vec3(1, 0, 0);
 var rotAngle = 0;
 var rotMatrix = mat4(1.0);
-var zoom = .8;
+var defaultZoom = 0.8;
+var zoom = defaultZoom;
 var downZoom = 1;
 var LEFT_BUTTON = 0;
 var RIGHT_BUTTON = 2;
@@ -262,7 +263,7 @@ function doStep() {
   if (stepper.d.r < 1) {
     // Handle collision. Iterate until we get close enough to reflect.
     stepper.undo();
-    while (stepper.d.r > 1.0000000000001) {
+    while (stepper.d.r > 1+Number.EPSILON) {
       stepper.stepHalf();
       if (stepper.d.r < 1) {
         stepper.undo();
@@ -270,7 +271,7 @@ function doStep() {
         // event.log(stepper.d, stepper.t);
       }
     }
-
+    
     event("collision", stepper.d);
 
     // Specular reflection
@@ -848,10 +849,19 @@ function simSpeedChanged() {
 function demoChanged() {
   var demo = demos[document.getElementById("demos").value];
   Object.getOwnPropertyNames(demo).forEach(function(setting, idx, array) {
-    document.getElementById(setting).value = demo[setting];
-    document.getElementById(setting).checked = demo[setting];
+    var element = document.getElementById(setting);
+    if (element != null) {
+      element.value = demo[setting];
+      element.checked = demo[setting];
+    }
   });
+  if (demo.hasOwnProperty("zoom")) {
+    zoom = demo.zoom;
+  } else {
+    zoom = defaultZoom;
+  }
   reset();
+  render();
 
   var demoName = document.getElementById("demos").value;
   setCookie("demo", demoName, 365);
@@ -1014,10 +1024,14 @@ window.onload = function init() {
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };
-  demos.demo11 = { r:1, theta:0, phi:0, pr:0, ptheta:0.92, pphi:0,
+  demos.demo11 = { r:1, theta:0, phi:0, pr:0, ptheta:0.95, pphi:0,
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };
+  demos.demo12 = { r:1, theta:0, phi:0, pr:0, ptheta:0.97, pphi:0,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:true, zoom:0.4 };
   // demos.demo11 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
   //                 gamma:0.12, gamma_star:0.03, eta:0, eta_star:0, mu_m:0.005,
   //                 collisionType:"elastic", updateP:true, updateM:true,

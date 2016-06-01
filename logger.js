@@ -93,6 +93,11 @@ Logger.prototype.stateChanged = function(dipole) {
   this.state.beta = degrees(get_beta(dipole)).toFixed(4);
   this.state.E = get_E(dipole).toFixed(8);
   this.state.dE = (get_E(dipole)-dipole.E0).toExponential(2);
+  // this.state.U = get_U(dipole).toExponential(2);
+  var U = get_U(dipole);
+  this.state.U = U.toFixed(8);
+  this.state.T = get_T(dipole).toFixed(8);
+  this.state.F_N = Math.max(0, -3*U - sq(dipole.ptheta)).toFixed(8);
 
   this.state.t = elapsedTime.toFixed(4);
 }

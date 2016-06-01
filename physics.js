@@ -23,6 +23,10 @@ function vecPolar2Cartesian(v, d) {
   
 }
 
+function sq(x) {
+  return x*x;
+}
+
 //----------------------------------------
 // Equations 52-57
 //----------------------------------------
@@ -30,18 +34,13 @@ function vecPolar2Cartesian(v, d) {
 //   [ dr_dt, dtheta_dt, dphi_dt, dpr_dt, dptheta_dt, dpphi_dt ]
 // function get_derivatives(d, dynamics) {
 function get_derivatives(x, dynamics) {
-  // var r = d.r;
-  // var theta = d.theta;
-  // var phi = d.phi;
-  // var pr = d.pr;
-  // var ptheta = d.ptheta;
-  // var pphi = d.pphi;
   var r = x[0];
   var theta = x[1];
   var phi = x[2];
   var pr = x[3];
   var ptheta = x[4];
   var pphi = x[5];
+  var d = new Dipole(r, theta, phi, pr, ptheta, pphi);
 
   // Pre-computations
   var r2 = r * r;
@@ -52,20 +51,59 @@ function get_derivatives(x, dynamics) {
   var sin_phi = Math.sin(phi);
   var cos2 = Math.cos(phi-2*theta);
   var sin2 = Math.sin(phi-2*theta);
+  var U = -(cos_phi + 3*cos2)/(12*r3);
+  // Force and torque friction. Only uses teh first two terms. The last
+  // term is taken care of only when r==1.
+  var F_fr = 0;
+  var T_fr = 0;
 
   var dxdt = [ 0, 0, 0, 0, 0, 0 ];
-  if (dynamics == "bouncing") {
-    dxdt[0] = pr;
-    dxdt[3] = ptheta * ptheta / r3 -
-      (1/(4*r4)) * (cos_phi + 3*cos2);
-  } else {
-    dxdt[0] = 0;
-    dxdt[3] = 0;
-  }
+  // if (dynamics == "bouncing") {
+  //   dxdt[0] = pr;
+  //   dxdt[3] = ptheta * ptheta / r3 -
+  //     (1/(4*r4)) * (cos_phi + 3*cos2);
+  // } else {
+  //   dxdt[0] = 0;
+  //   dxdt[3] = 0;
+  // }
+  // dxdt[1] = ptheta / r2;
+  // dxdt[2] = 10 * pphi;
+  // dxdt[4] = (1/(2*r3)) * sin2;
+  // dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2);
+
+  // d r
+  dxdt[0] = pr;
+  // d theta
   dxdt[1] = ptheta / r2;
+  // d phi
   dxdt[2] = 10 * pphi;
-  dxdt[4] = (1/(2*r3)) * sin2;
-  dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2);
+  // d pr
+  dxdt[3] = ptheta * ptheta / r3 + 3*U/r - F_fr*pr;// + F_N;
+  // d ptheta
+  dxdt[4] = (1/(2*r3)) * sin2 - F_fr*ptheta;// + (5*mu_m*F_N*r*pphi)/v_t;
+  // d pphi
+  dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2) -
+    T_fr*pphi;// + (mu_m*F_N*ptheta)/(2*v_t);
+
+  if (r == 1 && pr == 0) {
+    var F_N = Math.max(0, -3*U - sq(ptheta));
+    var v_t = Math.pow(sq(pr)+sq(ptheta-5*pphi), 0.5);
+    var F_fr_1 = mu_m*F_N/v_t;
+    var T_fr_1 = 5*mu_m*F_N/(2*v_t);
+    // d pr
+    dxdt[3] = dxdt[3] - F_fr_1*pr + F_N;
+    // d ptheta
+    dxdt[4] = dxdt[4] - F_fr_1*ptheta + (5*mu_m*F_N*r*pphi)/v_t;
+    // d pphi
+    dxdt[5] = dxdt[5] - T_fr_1*pphi + (mu_m*F_N*ptheta)/(2*v_t);
+  }
+
+  for (var i = 0; i < 6; ++i) {
+    if (dxdt[i] != dxdt[i]) {
+      console.log("NaN " + i);
+    }
+  }
+
   return dxdt;
 }
 
