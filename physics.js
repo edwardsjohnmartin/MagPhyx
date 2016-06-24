@@ -32,8 +32,7 @@ function sq(x) {
 //----------------------------------------
 // dxdt is an array of size 6 of the form
 //   [ dr_dt, dtheta_dt, dphi_dt, dpr_dt, dptheta_dt, dpphi_dt ]
-// function get_derivatives(d, dynamics) {
-function get_derivatives(x, dynamics) {
+function get_derivatives(x, verbose) {
   var r = x[0];
   var theta = x[1];
   var phi = x[2];
@@ -51,51 +50,63 @@ function get_derivatives(x, dynamics) {
   var sin_phi = Math.sin(phi);
   var cos2 = Math.cos(phi-2*theta);
   var sin2 = Math.sin(phi-2*theta);
+  // Interaction energy - caused by magnetic forces
   var U = -(cos_phi + 3*cos2)/(12*r3);
-  // Force and torque friction. Only uses teh first two terms. The last
-  // term is taken care of only when r==1.
+  // Force and torque friction. Only uses the first two terms. The last
+  // term (F_fr_1 and T_fr_1) is taken care of only when r==1. The first
+  // two terms have not yet been implemented.
   var F_fr = 0;
   var T_fr = 0;
 
   var dxdt = [ 0, 0, 0, 0, 0, 0 ];
-  // if (dynamics == "bouncing") {
-  //   dxdt[0] = pr;
-  //   dxdt[3] = ptheta * ptheta / r3 -
-  //     (1/(4*r4)) * (cos_phi + 3*cos2);
-  // } else {
-  //   dxdt[0] = 0;
-  //   dxdt[3] = 0;
-  // }
-  // dxdt[1] = ptheta / r2;
-  // dxdt[2] = 10 * pphi;
-  // dxdt[4] = (1/(2*r3)) * sin2;
-  // dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2);
 
   // d r
   dxdt[0] = pr;
+  var dr = pr;
   // d theta
   dxdt[1] = ptheta / r2;
+  var dtheta = ptheta / r2;
   // d phi
   dxdt[2] = 10 * pphi;
+  var dphi = 10 * pphi;
   // d pr
   dxdt[3] = ptheta * ptheta / r3 + 3*U/r - F_fr*pr;// + F_N;
+  var dpr = ptheta * ptheta / r3 + 3*U/r - F_fr*pr;// + F_N;
   // d ptheta
   dxdt[4] = (1/(2*r3)) * sin2 - F_fr*ptheta;// + (5*mu_m*F_N*r*pphi)/v_t;
+  var dptheta = (1/(2*r3)) * sin2 - F_fr*ptheta;// + (5*mu_m*F_N*r*pphi)/v_t;
   // d pphi
-  dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2) -
-    T_fr*pphi;// + (mu_m*F_N*ptheta)/(2*v_t);
+  dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2) - T_fr*pphi;
+  var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2) - T_fr*pphi;
 
+  if (verbose) {
+    console.log("1: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
+                dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
+  }
   if (r == 1 && pr == 0) {
+    // In contact.
+
+    // F_N is the magnitude of the normal force of the fixed sphere on the
+    // free sphere.
     var F_N = Math.max(0, -3*U - sq(ptheta));
     var v_t = Math.pow(sq(pr)+sq(ptheta-5*pphi), 0.5);
     var F_fr_1 = mu_m*F_N/v_t;
     var T_fr_1 = 5*mu_m*F_N/(2*v_t);
+    if (v_t == 0) {
+      F_fr_1 = 0;
+      T_fr_1 = 0;
+    }
     // d pr
     dxdt[3] = dxdt[3] - F_fr_1*pr + F_N;
+    if (Math.abs(dxdt[3]) < 1e-12) {
+      dxdt[3] = 0;
+    } else {
+      console.log(pr + " " + Math.abs(dxdt[3]));
+    }
     // d ptheta
-    dxdt[4] = dxdt[4] - F_fr_1*ptheta + (5*mu_m*F_N*r*pphi)/v_t;
+    dxdt[4] = dxdt[4] - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
     // d pphi
-    dxdt[5] = dxdt[5] - T_fr_1*pphi + (mu_m*F_N*ptheta)/(2*v_t);
+    dxdt[5] = dxdt[5] - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
   }
 
   for (var i = 0; i < 6; ++i) {
@@ -103,6 +114,10 @@ function get_derivatives(x, dynamics) {
       console.log("NaN " + i);
     }
   }
+  // if (verbose || dxdt[0] != 0) {
+  //   console.log("2: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
+  //               dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
+  // }
 
   return dxdt;
 }

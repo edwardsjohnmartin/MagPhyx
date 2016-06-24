@@ -151,7 +151,7 @@
           <!--------------------------------------------------------->
           <div style="text-align:center">
           <label style="text-align:center">demos
-            <select id="demos" onchange="demoChanged()">
+            <select id="demos" onchange="demoChanged()" tabindex="1">
               <option value="demo1" selected="selected">Demo 1</option>
               <option value="demo2">Demo 2</option>
               <option value="demo3">Demo 3</option>
@@ -164,6 +164,14 @@
               <option value="demo10">Demo 10</option>
               <option value="demo11">Demo 11</option>
               <option value="demo12">Demo 12</option>
+              <option value="demo13">Demo 13</option>
+              <option value="demo14">Demo 14</option>
+              <option value="demo15">Demo 15</option>
+              <option value="demo16">Demo 16</option>
+              <option value="demo17">Demo 17</option>
+              <option value="demo18">Demo 18</option>
+              <option value="demo19">Demo 19</option>
+              <option value="demo20">Demo 20</option>
             </select>
           </label>
           </div>
@@ -173,6 +181,7 @@
                 <td align="right" title="Distance from origin">r</td>
                 <td>
                   <input
+                     tabindex="2"
                      type="text"
                      class="number"
                      id="r"
@@ -183,6 +192,7 @@
                 <td align="left" title="Momentum away from origin">p<sub>r</sub></td>
                 <td>
                   <input
+                     tabindex="5"
                      type="text"
                      class="number"
                      id="pr"
@@ -195,6 +205,7 @@
                 <td align="right" title="Angle from origin">&theta;</td>
                 <td>
                   <input
+                     tabindex="3"
                      type="text"
                      class="number"
                      id="theta"
@@ -205,6 +216,7 @@
                 <td align="right" title="Momentum around origin">p<sub>&theta;</sub></td>
                 <td>
                   <input
+                     tabindex="6"
                      type="text"
                      class="number"
                      id="ptheta"
@@ -217,6 +229,7 @@
                 <td align="right" title="Moment angle">&phi;</td>
                 <td>
                   <input
+                     tabindex="4"
                      type="text"
                      class="number"
                      id="phi"
@@ -226,6 +239,7 @@
                 <td align="right" title="Angular momentum">p<sub>&phi;</sub></td>
                 <td>
                   <input
+                     tabindex="7"
                      type="text"
                      class="number"
                      id="pphi"

@@ -15,6 +15,7 @@ var mesh2Obj = D/2;
 var fieldTexCoord2Obj = D * 13.0;
 
 var logger = new Logger();
+var verbose = false;
 
 var elapsedTime = 0;
 var animate = false;
@@ -256,11 +257,12 @@ function doStep() {
   var dt = simSpeed * 1/10000;
   // elapsedTime += dt;
 
-  var stepper = new Stepper(freeDipole, dt, "bouncing");
-  // var stepper = new Stepper(freeDipole, dt, "sliding");
-  stepper.step();
+  var stepper = new Stepper(freeDipole, dt);
+  stepper.step(verbose);
 
   if (stepper.d.r < 1) {
+    // TODO: remove
+    animate = false;
     // Handle collision. Iterate until we get close enough to reflect.
     stepper.undo();
     while (stepper.d.r > 1+Number.EPSILON) {
@@ -414,7 +416,9 @@ function event(eventType, dipole) {
   if (eventType == "collision" || eventType == "slide") {
     plot.push(vec4(dipole.theta, get_beta(dipole), 0, 1));
   }
-  logger.event(eventType, dipole);
+  if (eventType != "slide") {
+    logger.event(eventType, dipole);
+  }
 }
 
 function vecString(v, fixed) {
@@ -582,9 +586,12 @@ function keyDown(e) {
     exportLog();
     break;
   case "V".charCodeAt(0):
-    // loggerPanel.toggleVerbosePanel();
-    logger.toggleVerbosePanel();
-    render();
+    if (e.shiftKey) {
+      verbose = !verbose;
+    } else {
+      logger.toggleVerbosePanel();
+      render();
+    }
     break;
   case "O".charCodeAt(0):
     console.log("Open file");
@@ -769,7 +776,7 @@ function reset() {
   setAnimate(false);
 
   logger.stateChanged(freeDipole);
-  logger.reset();
+  logger.reset(freeDipole);
   render();
 }
 
@@ -865,6 +872,8 @@ function demoChanged() {
 
   var demoName = document.getElementById("demos").value;
   setCookie("demo", demoName, 365);
+
+  toggleAnimate();
 }
 
 //------------------------------------------------------------
@@ -888,8 +897,10 @@ function getCookie(cookieName) {
   return "";
 }
 
-function checkDemoCookie() {
-  var demo = getCookie("demo");
+function checkDemoCookie(demo) {
+  if (!demo) {
+    demo = getCookie("demo");
+  }
   if (demo != "") {
     var demoSelect = document.getElementById("demos");
     for (var i = 0; i < demoSelect.length; ++i){
@@ -1024,22 +1035,68 @@ window.onload = function init() {
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };
-  demos.demo11 = { r:1, theta:0, phi:0, pr:0, ptheta:0.95, pphi:0,
+  demos.demo11 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.263761380, pphi:0.041348036,
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };
-  demos.demo12 = { r:1, theta:0, phi:0, pr:0, ptheta:0.97, pphi:0,
+  demos.demo12 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.132362361, pphi:-0.083154598,
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:true, zoom:0.4 };
-  // demos.demo11 = { r:1.001, theta:0, phi:150, pr:0, ptheta:0, pphi:0,
-  //                 gamma:0.12, gamma_star:0.03, eta:0, eta_star:0, mu_m:0.005,
-  //                 collisionType:"elastic", updateP:true, updateM:true,
-  //                 simSpeed:50,
-  //                 showPath:false };
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo13 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.285234480, pphi:0.127007070,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo14 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.436303799, pphi:0.107845103,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo15 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.523788928, pphi:0.076362180,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo16 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.525127315, pphi:0.076751527,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo17 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.358661672, pphi:-0.231954407,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo18 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.419009259, pphi:0.221607290,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo19 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.678375911, pphi:0.180685581,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
+  demos.demo20 = { r:1, theta:0, phi:0,
+                   pr:0, ptheta:0.997310660, pphi:0.072137448,
+                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
+                   simSpeed:1, collisionType:"elastic",
+                   updateP:true, updateM:true, showPath:false };
 
-  checkDemoCookie();
+  // Get demo as parameter in URL
+  var url = window.location.href;
+  var capturedDemo = /demo=([^&]+)/.exec(url);
+  var demo = capturedDemo ? capturedDemo[1] : null;
+  if (demo) {
+    demo = "demo" + demo;
+  }
+
+  checkDemoCookie(demo);
   demoChanged();
 
   reset();
+  toggleAnimate();
 }

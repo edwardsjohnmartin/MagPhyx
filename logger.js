@@ -67,7 +67,7 @@ Logger.prototype.getLogLabel = function(property) {
   return label;
 }
 
-Logger.prototype.reset = function() {
+Logger.prototype.reset = function(dipole) {
   this.logString = "";
   for (var i = 0; i < this.logEntries.length; i++) {
     var property = this.logEntries[i];
@@ -75,6 +75,7 @@ Logger.prototype.reset = function() {
     this.logString += label + ",";
   }
   this.logString += "\n";
+  this.event("init",dipole);
 }
 
 // Called anytime the free dipole moves.
@@ -84,20 +85,21 @@ Logger.prototype.setDebugValue = function(name, value) {
 
 // Called anytime the free dipole moves.
 Logger.prototype.stateChanged = function(dipole) {
-  this.state.r = dipole.r.toFixed(4);
-  this.state.theta = degrees(dipole.theta).toFixed(4);
-  this.state.phi = degrees(dipole.phi).toFixed(4);
-  this.state.pr = dipole.pr.toFixed(4);
-  this.state.ptheta = dipole.ptheta.toFixed(4);
-  this.state.pphi = dipole.pphi.toFixed(4);
-  this.state.beta = degrees(get_beta(dipole)).toFixed(4);
-  this.state.E = get_E(dipole).toFixed(8);
+  var n = 4;
+  this.state.r = dipole.r.toFixed(n);
+  this.state.theta = degrees(dipole.theta).toFixed(n);
+  this.state.phi = degrees(dipole.phi).toFixed(n);
+  this.state.pr = dipole.pr.toFixed(n);
+  this.state.ptheta = dipole.ptheta.toFixed(n);
+  this.state.pphi = dipole.pphi.toFixed(n);
+  this.state.beta = degrees(get_beta(dipole)).toFixed(n);
+  this.state.E = get_E(dipole).toFixed(n);
   this.state.dE = (get_E(dipole)-dipole.E0).toExponential(2);
   // this.state.U = get_U(dipole).toExponential(2);
   var U = get_U(dipole);
-  this.state.U = U.toFixed(8);
-  this.state.T = get_T(dipole).toFixed(8);
-  this.state.F_N = Math.max(0, -3*U - sq(dipole.ptheta)).toFixed(8);
+  this.state.U = U.toFixed(n);
+  this.state.T = get_T(dipole).toFixed(n);
+  this.state.F_N = Math.max(0, -3*U - sq(dipole.ptheta)).toFixed(n);
 
   this.state.t = elapsedTime.toFixed(4);
 }
@@ -170,6 +172,7 @@ Logger.prototype.renderPanel = function() {
     html += "<tr>";
     html += "<td>" + label + ":</td>";
     html += "<td>" + value + "</td>";
+    // html += "<td>" + value.toString().substr(0, 6) + "</td>";
     html += "</tr>";
   }
   debug.innerHTML = html;
