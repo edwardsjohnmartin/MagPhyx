@@ -488,6 +488,7 @@ Renderer.prototype.renderDomain = function() {
   var segments = [ { start:0, count:this.domain.n } ];
   var cos = (144*E_*E_-10)/6;
   if (E_ < 0 && cos >= -1 && cos <= 1) {
+  // if (cos >= -1 && cos <= 1) {
     var theta = Math.acos(cos) / 2;
     segments = this.domain.segments(theta);
   }

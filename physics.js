@@ -58,67 +58,51 @@ function get_derivatives(x, verbose) {
   var F_fr = 0;
   var T_fr = 0;
 
-  var dxdt = [ 0, 0, 0, 0, 0, 0 ];
-
-  // d r
-  dxdt[0] = pr;
+  // Apply magnetic forces and momenta
   var dr = pr;
-  // d theta
-  dxdt[1] = ptheta / r2;
   var dtheta = ptheta / r2;
-  // d phi
-  dxdt[2] = 10 * pphi;
   var dphi = 10 * pphi;
-  // d pr
-  dxdt[3] = ptheta * ptheta / r3 + 3*U/r - F_fr*pr;// + F_N;
-  var dpr = ptheta * ptheta / r3 + 3*U/r - F_fr*pr;// + F_N;
-  // d ptheta
-  dxdt[4] = (1/(2*r3)) * sin2 - F_fr*ptheta;// + (5*mu_m*F_N*r*pphi)/v_t;
-  var dptheta = (1/(2*r3)) * sin2 - F_fr*ptheta;// + (5*mu_m*F_N*r*pphi)/v_t;
-  // d pphi
-  dxdt[5] = -(1/(12*r3)) * (sin_phi + 3*sin2) - T_fr*pphi;
-  var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2) - T_fr*pphi;
+  // var dpr = ptheta * ptheta / r3 + 3*U/r;
+  var dpr = sq(ptheta) / r3 + 3*U/r;
+  var dptheta = (1/(2*r3)) * sin2;
+  var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2);
 
-  if (verbose) {
-    console.log("1: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
-                dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
-  }
+  // Apply friction forces
+  var dpr = dpr - F_fr*pr;
+  var dptheta = dptheta - F_fr*ptheta;
+  var dpphi = dpphi - T_fr*pphi;
+
   if (r == 1 && pr == 0) {
-    // In contact.
+    // In contact and sliding. Apply sphere-sphere frictional forces.
 
     // F_N is the magnitude of the normal force of the fixed sphere on the
     // free sphere.
     var F_N = Math.max(0, -3*U - sq(ptheta));
+    // Tangential speed at point of contact with fixed sphere
     var v_t = Math.pow(sq(pr)+sq(ptheta-5*pphi), 0.5);
+    // Sphere-sphere frictional force
     var F_fr_1 = mu_m*F_N/v_t;
     var T_fr_1 = 5*mu_m*F_N/(2*v_t);
     if (v_t == 0) {
       F_fr_1 = 0;
       T_fr_1 = 0;
     }
-    // d pr
-    dxdt[3] = dxdt[3] - F_fr_1*pr + F_N;
-    if (Math.abs(dxdt[3]) < 1e-12) {
-      dxdt[3] = 0;
-    } else {
-      console.log(pr + " " + Math.abs(dxdt[3]));
-    }
-    // d ptheta
-    dxdt[4] = dxdt[4] - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
-    // d pphi
-    dxdt[5] = dxdt[5] - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
+    dpr = 0;//dpr + F_N;
+    dptheta = dptheta - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
+    dpphi = dpphi - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
   }
-
+  
+  // Debug output and return
+  var dxdt = [ dr, dtheta, dphi, dpr, dptheta, dpphi ];
   for (var i = 0; i < 6; ++i) {
     if (dxdt[i] != dxdt[i]) {
       console.log("NaN " + i);
     }
   }
-  // if (verbose || dxdt[0] != 0) {
-  //   console.log("2: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
-  //               dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
-  // }
-
+  if (verbose || dxdt[0] != 0) {
+    console.log("2: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
+                dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
+  }
   return dxdt;
 }
 

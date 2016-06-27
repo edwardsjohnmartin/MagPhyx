@@ -28,12 +28,29 @@ Domain.prototype.segments = function(theta) {
   return ret;
 }
 
-Domain.prototype.wrappedSegments = function(theta) {
-  var n = (theta/(2*Math.PI)) * 360 * 2;
+Domain.prototype.wrappedSegments = function(theta_c, E_negative) {
+  var n = (theta_c/(2*Math.PI)) * 360 * 2;
   var ret = [];
-  ret.push({ start:0, count:n+4 });
-  ret.push({ start:180*2-n, count:n });
-  ret.push({ start:180*2+2, count:n+2 });
-  ret.push({ start:361*2-n-2, count:(n+1) });
+  if (E_negative) {
+    ret.push({ start:0, count:n+4 });
+    ret.push({ start:180*2-n, count:n });
+    ret.push({ start:180*2+2, count:n+2 });
+    ret.push({ start:361*2-n-2, count:(n+1) });
+  } else {
+    ret.push({ start:0, count:n });
+    ret.push({ start:180*2-n+2, count:n });
+    ret.push({ start:180*2+2, count:n-2 });
+    ret.push({ start:361*2-n, count:(n+1) });
+  }
+  return ret;
+}
+
+Domain.prototype.unboundedSegments = function(theta_c, E_negative) {
+  var n = (theta_c/(2*Math.PI)) * 360 * 2;
+  var ret = [];
+  if (!E_negative) {
+    ret.push({ start:n-2, count:180*2-2*n+6 });
+    ret.push({ start:180*2+n-2, count:180*2-2*n+6 });
+  }
   return ret;
 }

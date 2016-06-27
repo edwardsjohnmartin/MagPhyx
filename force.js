@@ -261,8 +261,6 @@ function doStep() {
   stepper.step(verbose);
 
   if (stepper.d.r < 1) {
-    // TODO: remove
-    animate = false;
     // Handle collision. Iterate until we get close enough to reflect.
     stepper.undo();
     while (stepper.d.r > 1+Number.EPSILON) {
@@ -697,9 +695,11 @@ function win2obj(p) {
   return vec2(x, y);
 }
 
-function rotatePoint(mousePos, dipole) {
-  var p = vec3(mousePos[0], mousePos[1], 0.0);
-  var v = subtract(p, dipole.p);
+function rotatePoint(p, dipole) {
+// function rotatePoint(mousePos, dipole) {
+  // var p = vec3(mousePos[0], mousePos[1], 0.0);
+  // var v = subtract(p, dipole.p);
+  var v = vec3(p[0], p[1], 0);
   var phi = degrees(Math.atan2(v[1], v[0]));
   document.getElementById("phi").value = phi;
   reset();
@@ -873,7 +873,7 @@ function demoChanged() {
   var demoName = document.getElementById("demos").value;
   setCookie("demo", demoName, 365);
 
-  toggleAnimate();
+  // toggleAnimate();
 }
 
 //------------------------------------------------------------
@@ -1098,5 +1098,5 @@ window.onload = function init() {
   demoChanged();
 
   reset();
-  toggleAnimate();
+  // toggleAnimate();
 }

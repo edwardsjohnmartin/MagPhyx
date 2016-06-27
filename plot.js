@@ -63,11 +63,6 @@ Plot.prototype.resize = function() {
     this.canvas.height = displayHeight;
   }
 
-  // var rect = canvas.getBoundingClientRect();
-  // canvasX = rect.left;
-  // canvasY = rect.top;
-  // canvasWidth = canvas.width;
-  // canvasHeight = canvas.height;
   this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 }
 
@@ -91,14 +86,17 @@ Plot.prototype.renderDomain = function(pm, mvm) {
   var E_ = get_E(freeDipole);
 
   var n = this.domain.n;
-  var segments = [ { start:0, count:n/2-2 },
-                   { start:n/2+2, count:n/2-2 }];
+  var segments = [ { start:0, count:n/2-2 }, // top boundary
+                   { start:n/2+2, count:n/2-2 }]; // bottom boundary
+  var unboundedSegments = [];
   // n is determined from the equation for r_c in the paper by solving
   // for theta at r = 1.0.
-  var cos = (144*E_*E_-10)/6;
-  if (E_ < 0 && cos >= -1 && cos <= 1) {
-    var theta = Math.acos(cos) / 2;
-    segments = this.domain.wrappedSegments(theta);
+  if (E_ < -1/6 || (E_ > 1/6 && E_ < 1/3)) {
+    // Equation in domain boundaries section of paper
+    var cos = 24 * E_ * E_ - 5/3;
+    var theta_c = Math.acos(cos) / 2;
+    segments = this.domain.wrappedSegments(theta_c, E_ < 0);
+    unboundedSegments = this.domain.unboundedSegments(theta_c, E_ < 0);
   }
 
   this.gl.uniform1f(prog.ELoc, E_);
@@ -111,13 +109,19 @@ Plot.prototype.renderDomain = function(pm, mvm) {
     var segment = segments[i];
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, segment.start, segment.count);
   }
+  for (var i = 0; i < unboundedSegments.length; ++i) {
+    var segment = unboundedSegments[i];
+    this.gl.drawArrays(this.gl.TRIANGLE_STRIP, segment.start, segment.count);
+  }
   // outline
-  this.gl.uniform4fv(prog.colorLoc, flatten(this.domain.outlineColor));
-  for (var mode = 0; mode < 2; ++mode) {
-    this.gl.uniform1i(prog.modeLoc, mode);
-    for (var i = 0; i < segments.length; ++i) {
-      var segment = segments[i];
-      this.gl.drawArrays(this.gl.LINE_STRIP, segment.start, segment.count);
+  if (E_ < 1/3) {
+    this.gl.uniform4fv(prog.colorLoc, flatten(this.domain.outlineColor));
+    for (var mode = 0; mode < 2; ++mode) {
+      this.gl.uniform1i(prog.modeLoc, mode);
+      for (var i = 0; i < segments.length; ++i) {
+        var segment = segments[i];
+        this.gl.drawArrays(this.gl.LINE_STRIP, segment.start, segment.count);
+      }
     }
   }
 
