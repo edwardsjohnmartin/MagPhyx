@@ -52,11 +52,20 @@ function get_derivatives(x, verbose) {
   var sin2 = Math.sin(phi-2*theta);
   // Interaction energy - caused by magnetic forces
   var U = -(cos_phi + 3*cos2)/(12*r3);
+
   // Force and torque friction. Only uses the first two terms. The last
   // term (F_fr_1 and T_fr_1) is taken care of only when r==1. The first
   // two terms have not yet been implemented.
+  var v = Math.sqrt(pr*pr + ptheta*ptheta/r2);
+  var B1 = (1/(12*r3))*Math.sqrt(10 + 6*Math.cos(2*theta));
   var F_fr = 0;
   var T_fr = 0;
+  if (v != 0) {
+    F_fr = gamma/v + eta*B1*B1;
+  }
+  if (pphi != 0) {
+    T_fr = gamma_star/Math.abs(pphi) + 10*eta_star*B1*B1;
+  }
 
   // Apply magnetic forces and momenta
   var dr = pr;
@@ -64,10 +73,10 @@ function get_derivatives(x, verbose) {
   var dphi = 10 * pphi;
   // var dpr = ptheta * ptheta / r3 + 3*U/r;
   var dpr = sq(ptheta) / r3 + 3*U/r;
-  if (dpr > -1e-5) {
-    console.log(dpr + " " + sq(ptheta) + " " + U + " " + r);
-    animate = false;
-  }
+  // if (dpr > -1e-5) {
+  //   console.log(dpr + " " + sq(ptheta) + " " + U + " " + r);
+  //   animate = false;
+  // }
   var dptheta = (1/(2*r3)) * sin2;
   var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2);
 
@@ -103,6 +112,17 @@ function get_derivatives(x, verbose) {
     // }
     dptheta = dptheta - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
     dpphi = dpphi - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
+  }
+
+  if (!updateP) {
+    dr = 0;
+    dtheta = 0;
+    dpr = 0;
+    dptheta = 0;
+  }
+  if (!updateM) {
+    dphi = 0;
+    dpphi = 0;
   }
   
   // Debug output and return

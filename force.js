@@ -19,6 +19,7 @@ var verbose = false;
 
 var elapsedTime = 0;
 var animate = false;
+var autostart = false;
 
 var numEvents = 0;
 
@@ -751,8 +752,8 @@ function reset() {
   freeDipole = new Dipole(r, theta, phi, pr, ptheta, pphi, null);
 
   // Update debug values
-  F(freeDipole, true);
-  T(freeDipole, true);
+  // F(freeDipole, true);
+  // T(freeDipole, true);
 
   updateP = document.getElementById("updateP").checked;
   updateM = document.getElementById("updateM").checked;
@@ -873,7 +874,9 @@ function demoChanged() {
   var demoName = document.getElementById("demos").value;
   setCookie("demo", demoName, 365);
 
-  // toggleAnimate();
+  if (autostart) {
+    toggleAnimate();
+  }
 }
 
 //------------------------------------------------------------
@@ -1092,8 +1095,11 @@ window.onload = function init() {
   var capturedDemo = /demo=([^&]+)/.exec(url);
   var demo = capturedDemo ? capturedDemo[1] : null;
   if (demo) {
-    demo = "demo" + demo;
+    demo = "Demo " + demo;
   }
+  // Get autostart as parameter in URL
+  var capturedAutostart = /autostart/.exec(url);
+  autostart = capturedAutostart ? true : false;
 
   // checkDemoCookie(demo);
   // demoChanged();
@@ -1145,22 +1151,10 @@ function updateDemos(data) {
                        mu_m:Number(tokens[j++]),
                        simSpeed:Number(tokens[j++]),
                        collisionType:tokens[j++],
-                       updateP:(tokens[j++] == "true"),
-                       updateM:(tokens[j++] == "true"),
-                       showPath:(tokens[j++] == "true") };
+                       updateP:(tokens[j++].toLowerCase() == "true"),
+                       updateM:(tokens[j++].toLowerCase() == "true"),
+                       showPath:(tokens[j++].toLowerCase() == "true") };
 
     }
-    // if (tokens[1] == "collision" || tokens[1] == "step") {
-    //   var j = 3;
-    //   var r = Number(tokens[j++]);
-    //   var theta = radians(Number(tokens[j++]));
-    //   var phi = radians(Number(tokens[j++]));
-    //   var pr = Number(tokens[j++]);
-    //   var ptheta = Number(tokens[j++]);
-    //   var pphi = Number(tokens[j++]);
-    //   var dipole = createDipole(r, theta, phi, pr, ptheta, pphi);
-    //   plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
-    // }
   }
-  // console.log(data);
 }
