@@ -64,6 +64,10 @@ function get_derivatives(x, verbose) {
   var dphi = 10 * pphi;
   // var dpr = ptheta * ptheta / r3 + 3*U/r;
   var dpr = sq(ptheta) / r3 + 3*U/r;
+  if (dpr > -1e-5) {
+    console.log(dpr + " " + sq(ptheta) + " " + U + " " + r);
+    animate = false;
+  }
   var dptheta = (1/(2*r3)) * sin2;
   var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2);
 
@@ -77,7 +81,11 @@ function get_derivatives(x, verbose) {
 
     // F_N is the magnitude of the normal force of the fixed sphere on the
     // free sphere.
-    var F_N = Math.max(0, -3*U - sq(ptheta));
+    // var F_N = Math.max(0, -3*U - sq(ptheta));
+    var F_N = -3*U - sq(ptheta);
+    // if (F_N < -1e-8) {
+    //   F_N = 0;
+    // }
     // Tangential speed at point of contact with fixed sphere
     var v_t = Math.pow(sq(pr)+sq(ptheta-5*pphi), 0.5);
     // Sphere-sphere frictional force
@@ -87,7 +95,12 @@ function get_derivatives(x, verbose) {
       F_fr_1 = 0;
       T_fr_1 = 0;
     }
-    dpr = 0;//dpr + F_N;
+    // if (Math.abs(dpr + F_N) < 1e-12) {
+    //   dpr = 0;
+    // } else {
+    //   console.log(dpr + " " + F_N + " " + r + " " + r3);
+      dpr = dpr + F_N;
+    // }
     dptheta = dptheta - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
     dpphi = dpphi - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
   }
@@ -99,8 +112,10 @@ function get_derivatives(x, verbose) {
       console.log("NaN " + i);
     }
   }
-  if (verbose || dxdt[0] != 0) {
-    console.log("2: " + dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
+  // verbose = true;
+  if (verbose) {
+    console.log("get_derivatives: " +
+                dxdt[0] + " " + dxdt[1] + " " + dxdt[2] + " " +
                 dxdt[3] + " " + dxdt[4] + " " + dxdt[5]);
   }
   return dxdt;

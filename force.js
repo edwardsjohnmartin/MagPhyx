@@ -995,6 +995,7 @@ window.onload = function init() {
   collisionType = document.getElementById("collisionType").value;
 
   // Demos
+  /*
   demos.demo1 = { r:1.5, theta:0, phi:0, pr:0, ptheta:0, pphi:0,
                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                   simSpeed:1, collisionType:"elastic",
@@ -1085,7 +1086,7 @@ window.onload = function init() {
                    gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
                    simSpeed:1, collisionType:"elastic",
                    updateP:true, updateM:true, showPath:false };
-
+  */
   // Get demo as parameter in URL
   var url = window.location.href;
   var capturedDemo = /demo=([^&]+)/.exec(url);
@@ -1094,9 +1095,72 @@ window.onload = function init() {
     demo = "demo" + demo;
   }
 
-  checkDemoCookie(demo);
-  demoChanged();
+  // checkDemoCookie(demo);
+  // demoChanged();
+
+  // console.log(document.getElementById("text-file-container").innerHTML);
+  $.ajax({
+    async:true,
+    url: 'demos.csv',
+    dataType: 'text',
+    success: function(data) 
+    {
+      $('element').append(data);
+      // console.log(data);
+      updateDemos(data);
+      
+      checkDemoCookie(demo);
+      demoChanged();
+    }
+  });
 
   reset();
   // toggleAnimate();
+}
+
+function updateDemos(data) {
+  var demoSelect = document.getElementById("demos");
+
+  var lines = data.split(/\r\n|\n|\r/);
+  var headers = lines[0].split(',');
+  for (var i = 1; i < lines.length; ++i) {
+    var tokens = lines[i].split(',');
+    if (tokens.length > 3) {
+      var j = 1;
+      var name = tokens[0];
+      var option = document.createElement("option");
+      option.text = name;
+      demoSelect.add(option);
+
+      demos[name] = { r:Number(tokens[j++]),
+                       theta:Number(tokens[j++]),
+                       phi:Number(tokens[j++]),
+                       pr:Number(tokens[j++]),
+                       ptheta:Number(tokens[j++]),
+                       pphi:Number(tokens[j++]),
+                       gamma:Number(tokens[j++]),
+                       gamma_star:Number(tokens[j++]),
+                       eta:Number(tokens[j++]),
+                       eta_star:Number(tokens[j++]),
+                       mu_m:Number(tokens[j++]),
+                       simSpeed:Number(tokens[j++]),
+                       collisionType:tokens[j++],
+                       updateP:(tokens[j++] == "true"),
+                       updateM:(tokens[j++] == "true"),
+                       showPath:(tokens[j++] == "true") };
+
+    }
+    // if (tokens[1] == "collision" || tokens[1] == "step") {
+    //   var j = 3;
+    //   var r = Number(tokens[j++]);
+    //   var theta = radians(Number(tokens[j++]));
+    //   var phi = radians(Number(tokens[j++]));
+    //   var pr = Number(tokens[j++]);
+    //   var ptheta = Number(tokens[j++]);
+    //   var pphi = Number(tokens[j++]);
+    //   var dipole = createDipole(r, theta, phi, pr, ptheta, pphi);
+    //   plot.push(vec4(dipole.theta(), dipole.beta(), 0, 1));
+    // }
+  }
+  // console.log(data);
 }
