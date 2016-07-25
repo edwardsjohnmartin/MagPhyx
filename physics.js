@@ -80,6 +80,8 @@ function get_derivatives(x, verbose) {
   var dptheta = (1/(2*r3)) * sin2;
   var dpphi = -(1/(12*r3)) * (sin_phi + 3*sin2);
 
+  // console.log("1. F_N = " + F_N + " dpr = " + dpr + " dr = " + dr);
+
   // Apply friction forces
   var dpr = dpr - F_fr*pr;
   var dptheta = dptheta - F_fr*ptheta;
@@ -92,9 +94,10 @@ function get_derivatives(x, verbose) {
     // free sphere.
     // var F_N = Math.max(0, -3*U - sq(ptheta));
     var F_N = -3*U - sq(ptheta);
-    // if (F_N < -1e-8) {
-    //   F_N = 0;
-    // }
+    // F_N = Math.max(0, F_N);
+    if (F_N < -1e-8) {
+      F_N = 0;
+    }
     // Tangential speed at point of contact with fixed sphere
     var v_t = Math.pow(sq(pr)+sq(ptheta-5*pphi), 0.5);
     // Sphere-sphere frictional force
@@ -113,6 +116,7 @@ function get_derivatives(x, verbose) {
     dptheta = dptheta - F_fr_1*ptheta + (v_t==0?0:(5*mu_m*F_N*r*pphi)/v_t);
     dpphi = dpphi - T_fr_1*pphi + (v_t==0?0:(mu_m*F_N*ptheta)/(2*v_t));
   }
+  // console.log("2. F_N = " + F_N + " dpr = " + dpr + " dr = " + dr);
 
   if (!updateP) {
     dr = 0;

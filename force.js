@@ -997,99 +997,6 @@ window.onload = function init() {
   eta = Number(document.getElementById("eta").value);
   collisionType = document.getElementById("collisionType").value;
 
-  // Demos
-  /*
-  demos.demo1 = { r:1.5, theta:0, phi:0, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:1, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:false };
-  demos.demo2 = { r:1.5, theta:90, phi:180, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:1, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:false };
-  demos.demo3 = { r:1.1, theta:45, phi:45, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:2, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:false };
-  demos.demo4 = { r:1.1288129, theta:-21.59883, phi:0, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:20, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:true };
-  demos.demo5 = { r:1.1, theta:80, phi:80, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:100, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:true };
-  demos.demo6 = { r:1.5, theta:45, phi:0, pr:0, ptheta:0, pphi:0,
-                  gamma:0.001, gamma_star:0.001, eta:0, eta_star:0, mu_m:0.1,
-                  simSpeed:1, collisionType:"inelastic",
-                  updateP:true, updateM:true, showPath:false };
-  demos.demo7 = { r:1.5, theta:0, phi:90, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:100, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:true };
-  demos.demo8 = { r:1.05, theta:135, phi:30, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:1, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:true };
-  demos.demo9 = { r:1, theta:0, phi:180, pr:0, ptheta:0, pphi:0,
-                  gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                  simSpeed:1, collisionType:"elastic",
-                  updateP:true, updateM:true, showPath:false };
-  demos.demo10 = { r:1, theta:90, phi:0, pr:0, ptheta:0, pphi:0,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo11 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.263761380, pphi:0.041348036,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo12 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.132362361, pphi:-0.083154598,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo13 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.285234480, pphi:0.127007070,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo14 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.436303799, pphi:0.107845103,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo15 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.523788928, pphi:0.076362180,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo16 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.525127315, pphi:0.076751527,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo17 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.358661672, pphi:-0.231954407,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo18 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.419009259, pphi:0.221607290,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo19 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.678375911, pphi:0.180685581,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  demos.demo20 = { r:1, theta:0, phi:0,
-                   pr:0, ptheta:0.997310660, pphi:0.072137448,
-                   gamma:0, gamma_star:0, eta:0, eta_star:0, mu_m:0,
-                   simSpeed:1, collisionType:"elastic",
-                   updateP:true, updateM:true, showPath:false };
-  */
   // Get demo as parameter in URL
   var url = window.location.href;
   var capturedDemo = /demo=([^&]+)/.exec(url);
@@ -1153,7 +1060,8 @@ function updateDemos(data) {
                        collisionType:tokens[j++],
                        updateP:(tokens[j++].toLowerCase() == "true"),
                        updateM:(tokens[j++].toLowerCase() == "true"),
-                       showPath:(tokens[j++].toLowerCase() == "true") };
+                       showPath:(tokens[j++].toLowerCase() == "true"),
+                       zoom:Number(tokens[j++]) };
 
     }
   }
