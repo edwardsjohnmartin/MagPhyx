@@ -276,7 +276,11 @@ function doStep() {
     event("collision", stepper.d);
 
     // Specular reflection
-    stepper.d.pr = -stepper.d.pr;
+    if (collisionType == ELASTIC) {
+      stepper.d.pr = -stepper.d.pr;
+    } else {
+      stepper.d.pr = 0;
+    }
   } else if (stepper.d.r == 1) {
     event("slide", stepper.d);
   } else {
