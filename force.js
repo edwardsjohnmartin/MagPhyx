@@ -743,6 +743,7 @@ function resize(canvas) {
     // pixels at each redraw
     if (Math.abs(canvas.height - displayHeight) > 2) {
       canvas.height = displayHeight;
+      console.log("adjusting height: " + displayHeight + " " + canvas.clientHeight);
     }
   }
 
