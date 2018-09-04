@@ -725,14 +725,25 @@ function resize(canvas) {
   // Lookup the size the browser is displaying the canvas.
   var displayWidth  = canvas.clientWidth;
   var displayHeight = canvas.clientHeight;
- 
+
+  // console.log(canvas);
+  // var propValue;
+  // for(var propName in canvas) {
+  //   propValue = canvas[propName]
+  //   console.log(propName,propValue);
+  // } 
+
   // Check if the canvas is not the same size.
   if (canvas.width  != displayWidth ||
       canvas.height != displayHeight) {
  
     // Make the canvas the same size
     canvas.width  = displayWidth;
-    canvas.height = displayHeight;
+    // HACK! This is to handle a case where the height was increasing by two
+    // pixels at each redraw
+    if (Math.abs(canvas.height - displayHeight) > 2) {
+      canvas.height = displayHeight;
+    }
   }
 
   var rect = canvas.getBoundingClientRect();
@@ -743,6 +754,7 @@ function resize(canvas) {
   gl.viewport(0, 0, canvas.width, canvas.height);
 
   plot.resize();
+  // console.log("a " + displayHeight + " " + canvas.clientHeight);
 }
 
 function reset() {

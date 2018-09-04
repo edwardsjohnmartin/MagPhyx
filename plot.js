@@ -38,6 +38,8 @@ Plot.prototype.updateLabels = function() {
     degrees(this.points.miny).toFixed(0);
   document.getElementById("ymax").innerHTML =
     degrees(this.points.maxy).toFixed(0);
+
+
   // if (this.n == 0) {
   //   document.getElementById("xmin").innerHTML = "&nbsp;";
   //   document.getElementById("xmax").innerHTML = "&nbsp;";
