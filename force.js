@@ -861,6 +861,7 @@ function simSpeedChanged() {
 
 function demoChanged() {
   var demo = demos[document.getElementById("demos").value];
+  // console.log(demo);
   Object.getOwnPropertyNames(demo).forEach(function(setting, idx, array) {
     var element = document.getElementById(setting);
     if (element != null) {
@@ -1070,4 +1071,49 @@ function updateDemos(data) {
 
     }
   }
+}
+
+function newDemos() {
+  let data = document.getElementById("new-demos").value;
+  // console.log(data);
+
+  let demoSelect = document.getElementById("demos");
+
+  /*
+name,r,theta,phi,pr,ptheta,pphi
+abc,1,0,0,0.24270962,-0.24676049,0.15712033
+  */
+  let lines = data.split(/\r\n|\n|\r/);
+  let headers = lines[0].split(',');
+  for (let i = 1; i < lines.length; ++i) {
+    // let tokens = lines[i].split(',');
+    let tokens = lines[i].split(',');
+    if (tokens.length > 3) {
+      let j = 1;
+      let name = tokens[0];
+      let option = document.createElement("option");
+      option.text = name;
+      demoSelect.add(option);
+      demos[name] =  { r:Number(tokens[j++]),
+                       theta:Number(tokens[j++]),
+                       phi:Number(tokens[j++]),
+                       pr:Number(tokens[j++]),
+                       ptheta:Number(tokens[j++]),
+                       pphi:Number(tokens[j++]),
+                       gamma:0,
+                       gamma_star:0,
+                       eta:0,
+                       eta_star:0,
+                       mu_m:0,
+                       simSpeed:1,
+                       collisionType:'elastic',
+                       updateP:true,
+                       updateM:true,
+                       showPath:true,
+                       zoom:0.8
+                     };
+    }
+  }
+  // checkDemoCookie(demo);
+  demoChanged();
 }
