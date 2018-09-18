@@ -48,12 +48,14 @@ var dpphi = 0;
 
 var path;
 var path2;
+var numFadePath = -1;
 
 var renderer;
 
 var lineProgram;
 var circleProgram;
 var flatProgram;
+var pathProgram;
 var domainProgram;
 var sphereProgram;
 var textureProgram;
@@ -801,6 +803,7 @@ window.onload = function init() {
   lineProgram = new LineProgram();
   circleProgram = new CircleProgram();
   flatProgram = new FlatProgram(gl);
+  pathProgram = new PathProgram(gl);
   domainProgram = new DomainProgram(gl);
   sphereProgram = new SphereProgram();
   textureProgram = new TextureProgram();
@@ -859,6 +862,9 @@ window.onload = function init() {
   if (dpphi) {
     two = true;
   }
+
+  let captured_numFade = /numFadePath=([^&]+)/.exec(url);
+  numFadePath = captured_numFade ? +captured_numFade[1] : -1;
 
   // checkDemoCookie(demo);
   // demoChanged();

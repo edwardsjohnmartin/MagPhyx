@@ -77,6 +77,29 @@ var FlatProgram = function(gl) {
     });
 }
 
+var PathProgram = function(gl) {
+  this.initialized = false;
+  const prog = this;
+  initShadersNew(
+    gl, "shaders/path.vert", "shaders/flat.frag", function(program) {
+      prog.initialized = true;
+      prog.program = program;
+      gl.useProgram(prog.program);
+
+      prog.vertexLoc = gl.getAttribLocation(prog.program, "vPosition");
+
+      prog.mvMatrixLoc = gl.getUniformLocation(prog.program, "mvMatrix");
+      prog.pMatrixLoc = gl.getUniformLocation(prog.program, "pMatrix");
+
+      prog.pointSize = gl.getUniformLocation(prog.program, "pointSize");
+      prog.colorLoc = gl.getUniformLocation(prog.program, "color");
+      prog.numPointsLoc = gl.getUniformLocation(prog.program, "numPoints");
+      prog.numFadeLoc = gl.getUniformLocation(prog.program, "numFade");
+
+      gl.uniform1f(prog.pointSize, 1.0);
+    });
+}
+
 var DomainProgram = function(gl) {
   this.initialized = false;
   const prog = this;

@@ -2,6 +2,9 @@
 
 attribute vec4 vPosition;
     
+varying vec4 fColor;
+uniform vec4 color;
+
 uniform mat4 mvMatrix;
 uniform mat4 pMatrix;
 uniform float pointSize;
@@ -96,4 +99,6 @@ void main() {
 
   gl_Position = pMatrix*mvMatrix*vec4(point.xy, 0.0, 1.0);
   gl_PointSize = pointSize;
+
+  fColor = color;
 } 

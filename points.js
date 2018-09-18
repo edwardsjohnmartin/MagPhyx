@@ -48,6 +48,7 @@ Points.prototype.push = function(p) {
     }
   }
 
+  // Handle dynamic array resizing
   if (this.n == this.points.length) {
     this.points.length *= 2;
     for (var i = this.n; i < this.points.length; ++i) {
@@ -57,12 +58,12 @@ Points.prototype.push = function(p) {
                        this.gl.STATIC_DRAW);
   }
 
-
-  var pointsArray = [ p ];
+  let newp = vec4(p[0], p[1], p[2], this.n);
+  var pointsArray = [ newp ];
   this.gl.bufferSubData(gl.ARRAY_BUFFER, this.n*VEC_SIZE,
                    flatten(pointsArray));
 
-  this.points[this.n] = p;
+  this.points[this.n] = newp;
   ++this.n;
 }
 
