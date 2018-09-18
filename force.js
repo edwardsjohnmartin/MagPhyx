@@ -37,8 +37,17 @@ var fw, fh;
 var gl;
 
 var freeDipole;
+var freeDipole2;
+var two = false;
+var dr = 0;
+var dtheta = 0;
+var dphi = 0;
+var dpr = 0;
+var dptheta = 0;
+var dpphi = 0;
 
 var path;
+var path2;
 
 var renderer;
 
@@ -127,16 +136,7 @@ function isNegativeZeroCrossing(a, b) {
   return (sign(a) > 0 && sign(b) <= 0);
 }
 
-function doStep() {
-  var oldFreeDipole = freeDipole.copy();
-
-  var oldElapsedTime = elapsedTime;
-  var dt = simSpeed * 1/10000;
-  // elapsedTime += dt;
-
-  var stepper = new Stepper(freeDipole, dt);
-  stepper.step(verbose);
-
+function handleStepperCollision(stepper) {
   if (stepper.d.r < 1) {
     // Handle collision. Iterate until we get close enough to reflect.
     stepper.undo();
@@ -162,8 +162,32 @@ function doStep() {
   } else {
     // console.log("Not zero");
   }
+}
 
+function doStep() {
+  var oldFreeDipole = freeDipole.copy();
+
+  var oldElapsedTime = elapsedTime;
+  var dt = simSpeed * 1/10000;
+  // elapsedTime += dt;
+
+  if (two) {
+    let stepper2 = new Stepper(freeDipole2, dt);
+    stepper2.step(verbose);
+    handleStepperCollision(stepper2);
+    freeDipole2 = stepper2.d;
+
+    if (length(subtract(loggedPoint2, freeDipole2.p())) > 0.01) {
+      path2.push(vec4(freeDipole2.p()[0], freeDipole2.p()[1], 0, 1));
+      loggedPoint2 = freeDipole2.p();
+    }
+  }
+
+  let stepper = new Stepper(freeDipole, dt);
+  stepper.step(verbose);
+  handleStepperCollision(stepper);
   freeDipole = stepper.d;
+
   logger.stateChanged(freeDipole);
   elapsedTime += stepper.t;
 
@@ -234,6 +258,7 @@ var ticks = 0;
 var tickElapsedTime = 0;
 var ticksPerUpdate = 10;
 var loggedPoint = vec3(0, 0, 0);
+var loggedPoint2 = vec3(0, 0, 0);
 function tick() {
   if (animate) {
     ticks++;
@@ -544,6 +569,8 @@ function reset() {
   var pphi = Number(document.getElementById("pphi").value);
 
   freeDipole = new Dipole(r, theta, phi, pr, ptheta, pphi, null);
+  freeDipole2 = new Dipole(r+dr, theta+dtheta, phi+dphi,
+                           pr+dpr, ptheta+dptheta, pphi+dpphi, null);
 
   updateP = document.getElementById("updateP").checked;
   updateM = document.getElementById("updateM").checked;
@@ -562,6 +589,7 @@ function reset() {
 
   plot.clear();
   path.clear();
+  path2.clear();
 
   elapsedTime = 0;
   setAnimate(false);
@@ -777,8 +805,9 @@ window.onload = function init() {
   sphereProgram = new SphereProgram();
   textureProgram = new TextureProgram();
 
-  path = new Path(gl);
   renderer = new Renderer(gl);
+  path = new Path(gl, renderer.red);
+  path2 = new Path(gl, renderer.blue);
 
   simSpeed = Number(document.getElementById("simSpeed").value);
   gamma_star = Number(document.getElementById("gamma_star").value);
@@ -798,6 +827,38 @@ window.onload = function init() {
   // Get autostart as parameter in URL
   var capturedAutostart = /autostart/.exec(url);
   autostart = capturedAutostart ? true : false;
+
+  // Get delta as parameter in URL
+  let captured_dr = /dr=([^&]+)/.exec(url);
+  dr = captured_dr ? +captured_dr[1] : null;
+  if (dr) {
+    two = true;
+  }
+  let captured_dtheta = /dtheta=([^&]+)/.exec(url);
+  dtheta = captured_dtheta ? +captured_dtheta[1] : null;
+  if (dtheta) {
+    two = true;
+  }
+  let captured_dphi = /dphi=([^&]+)/.exec(url);
+  dphi = captured_dphi ? +captured_dphi[1] : null;
+  if (dphi) {
+    two = true;
+  }
+  let captured_dpr = /dpr=([^&]+)/.exec(url);
+  dpr = captured_dpr ? +captured_dpr[1] : null;
+  if (dpr) {
+    two = true;
+  }
+  let captured_dptheta = /dptheta=([^&]+)/.exec(url);
+  dptheta = captured_dptheta ? +captured_dptheta[1] : null;
+  if (dptheta) {
+    two = true;
+  }
+  let captured_dpphi = /dpphi=([^&]+)/.exec(url);
+  dpphi = captured_dpphi ? +captured_dpphi[1] : null;
+  if (dpphi) {
+    two = true;
+  }
 
   // checkDemoCookie(demo);
   // demoChanged();

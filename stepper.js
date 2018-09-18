@@ -30,23 +30,23 @@ Stepper.prototype.undo = function() {
 }
 
 function rk4Add(x, k, f) {
-  var ret = [ 0, 0, 0, 0, 0, 0 ];
-  for (var i = 0; i < ret.length; ++i) {
+  let ret = [ 0, 0, 0, 0, 0, 0 ];
+  for (let i = 0; i < ret.length; ++i) {
     ret[i] = x[i] + f * k[i];
   }
   return ret;
 }
 
 Stepper.prototype.rk4 = function(verbose) {
-  var x = [ this.d.r, this.d.theta, this.d.phi,
+  let x = [ this.d.r, this.d.theta, this.d.phi,
             this.d.pr, this.d.ptheta, this.d.pphi ];
-  var k1 = get_derivatives(x, verbose);
-  var k2 = get_derivatives(rk4Add(x, k1, this.h/2), verbose);
-  var k3 = get_derivatives(rk4Add(x, k2, this.h/2), verbose);
-  var k4 = get_derivatives(rk4Add(x, k3, this.h), verbose);
+  let k1 = get_derivatives(x, verbose);
+  let k2 = get_derivatives(rk4Add(x, k1, this.h/2), verbose);
+  let k3 = get_derivatives(rk4Add(x, k2, this.h/2), verbose);
+  let k4 = get_derivatives(rk4Add(x, k3, this.h), verbose);
 
-  var ret = [ 0, 0, 0, 0, 0, 0 ];
-  for (var i = 0; i < x.length; ++i) {
+  let ret = [ 0, 0, 0, 0, 0, 0 ];
+  for (let i = 0; i < x.length; ++i) {
     ret[i] = x[i] + (this.h/6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]);
   }
 

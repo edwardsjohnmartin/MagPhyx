@@ -596,18 +596,18 @@ Renderer.prototype.renderCircles = function() {
   return success;
 }
 
-Renderer.prototype.renderCircleOutlines = function() {
+Renderer.prototype.renderFreeDipoleOutline = function(freeDipole) {
   pushMatrix();
-  var s = mesh2Obj;
-  var success = true;
-  var positions = [ vec3(0,0,0), freeDipole.p() ];
-  var moments = [ vec3(1,0,0), freeDipole.m() ];
-  for (var i = 0; i < positions.length; i++) { 
+  let s = mesh2Obj;
+  let success = true;
+  let positions = [ vec3(0,0,0), freeDipole.p() ];
+  let moments = [ vec3(1,0,0), freeDipole.m() ];
+  for (let i = 0; i < positions.length; i++) { 
     pushMatrix();
     mvMatrix = mult(mvMatrix, translate(positions[i]));
-    var phi = Math.acos(dot(vec3(1, 0, 0), moments[i]));
+    let phi = Math.acos(dot(vec3(1, 0, 0), moments[i]));
     if (phi != 0) {
-      var axis = cross(vec3(1, 0, 0), moments[i]);
+      let axis = cross(vec3(1, 0, 0), moments[i]);
       mvMatrix = mult(mvMatrix, rotate(degrees(phi), axis));
     }
     mvMatrix = mult(mvMatrix, scalem(s, s, 1));
@@ -620,6 +620,14 @@ Renderer.prototype.renderCircleOutlines = function() {
   }
   popMatrix();
 
+  return success;
+}
+
+Renderer.prototype.renderCircleOutlines = function() {
+  success = this.renderFreeDipoleOutline(freeDipole);
+  if (success) {
+    success = this.renderFreeDipoleOutline(freeDipole2);
+  }
   return success;
 }
 
@@ -697,6 +705,7 @@ Renderer.prototype.doRender = function() {
   }
 
   if (showPath) {
+    path2.render();
     path.render();
   }
 

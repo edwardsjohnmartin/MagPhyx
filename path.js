@@ -1,5 +1,6 @@
-var Path = function(gl) {
+var Path = function(gl, color) {
   this.points = new Points(gl);
+  this.color = color;
 }
 
 Path.prototype.clear = function() {
@@ -27,7 +28,8 @@ Path.prototype.render = function() {
 
   gl.uniformMatrix4fv(flatProgram.mvMatrixLoc, false, flatten(mvMatrix));
   gl.uniformMatrix4fv(flatProgram.pMatrixLoc, false, flatten(pMatrix));
-  gl.uniform4fv(flatProgram.colorLoc, flatten(renderer.red));
+  // gl.uniform4fv(flatProgram.colorLoc, flatten(renderer.red));
+  gl.uniform4fv(flatProgram.colorLoc, flatten(this.color));
 
   gl.drawArrays(gl.LINE_STRIP, 0, this.points.n);
 
