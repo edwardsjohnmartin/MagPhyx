@@ -625,7 +625,7 @@ Renderer.prototype.renderFreeDipoleOutline = function(freeDipole) {
 
 Renderer.prototype.renderCircleOutlines = function() {
   success = this.renderFreeDipoleOutline(freeDipole);
-  if (success) {
+  if (success && two) {
     success = this.renderFreeDipoleOutline(freeDipole2);
   }
   return success;
