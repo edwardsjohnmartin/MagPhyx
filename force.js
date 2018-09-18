@@ -127,130 +127,6 @@ function isNegativeZeroCrossing(a, b) {
   return (sign(a) > 0 && sign(b) <= 0);
 }
 
-// function updatePositions() {
-//   var oldFreeDipole = freeDipole.copy();
-
-//   var oldElapsedTime = elapsedTime;
-//   var dt = simSpeed * 1/10000;
-//   elapsedTime += dt;
-
-//   // 4th order runge-kutta
-//   var rk = rk4(freeDipole, dt);
-
-//   if (!updateP) {
-//     // Not updating position. Update only moment.
-//     freeDipole.updateFromRK(rk, updateP, updateM);
-//   } else {
-//     // Handle separately in case there are collisions.
-//     var touching = isTouching(fixedDipole.p, freeDipole.p);
-//     if (touching && collisionType == INELASTIC) {
-//       // "Sliding" case.
-//       // Spheres are touching and traveling towards each other.
-//       // Translate in the tangential direction.
-//       var tangent = normalize(cross(freeDipole.p, vec3(0, 0, 1)));
-//       var newv = mult(tangent, dot(rk.v, tangent));
-//       // newp_tangent is the new position if traveling
-//       // in the tangent direction
-//       var newp_tangent = add(freeDipole.p, mult(newv, dt));
-//       // Traveling in the tangent direction will pull freeDipole off of
-//       // fixedDipole, so pull freeDipole toward fixedDipole until they touch
-//       var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
-//       var newp = add(fixedDipole.p, u);
-//       freeDipole.update(newp, newv, rk.theta, rk.omega, updateP, updateM);
-//     } else {
-//       // We're not touching or else we're traveling away from the fixed dipole
-//       var dx = subtract(rk.p, freeDipole.p);
-//       var qt = computeIntersection(fixedDipole.p, freeDipole.p, dx);
-
-//       if (qt < 0 || qt > 1 || isNaN(qt)) {
-//         // No collision
-//         freeDipole.updateFromRK(rk, updateP, updateM);
-//       } else {
-//         // A collision will occur in this time step.
-//         // Use binary search to find a really close hit.
-//         elapsedTime -= dt;
-//         var done = false;
-//         var iterations = 0;
-//         while (!done && iterations < 100) {
-//           dt /= 2;
-//           var newrk = rk4(freeDipole, dt);
-          
-//           if (length(subtract(newrk.p, fixedDipole.p)) < D) {
-//             // Intersects. Don't update position, but rather cut the time
-//             // step in half and retry.
-//           } else {
-//             // No intersection. Update position and try again.
-//             // TODO: bug here: what if there are multiple zero crossings?
-//             freeDipole.updateFromRK(newrk, updateP, updateM);
-//             oldElapsedTime = elapsedTime;
-//             elapsedTime += dt;
-//           }
-//           done = isTouching(fixedDipole.p, freeDipole.p);
-//           ++iterations;
-//         }
-
-//         // At this point freeDipole is on the surface and still heading
-//         // toward fixedDipole.
-//         event("collision", freeDipole);
-
-//         if (collisionType == ELASTIC) {
-//           // specular reflection
-//           var normal = normalize(subtract(freeDipole.p, fixedDipole.p));
-//           var l = normalize(mult(freeDipole.v, -1));
-//           var refln = 2 * dot(l, normal);
-//           refln = mult(refln, normal);
-//           refln = normalize(subtract(refln, l));
-//           var newv = mult(refln, length(freeDipole.v));
-//           freeDipole.update(
-//             freeDipole.p, newv, freeDipole.phi(), freeDipole.av,
-//             updateP, updateM);
-//         } else {
-//           // inelastic collision - really should set v to something meaningful
-//           var newv = vec3(0, 0, 0);
-//           var newp = add(freeDipole.p, mult(dx, qt));
-//           freeDipole.update(
-//             newp, newv, rk.theta, rk.omega,
-//             updateP, updateM);
-//         }
-//       }
-//     }
-//   }
-
-//   updateDebug(freeDipole);
-
-//   // Log zero crossings
-//   if (isZeroCrossing(oldFreeDipole.theta(), freeDipole.theta())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.theta();});
-//     event("theta = 0", logDipole);
-//   }
-//   if (isZeroCrossing(oldFreeDipole.phi(), freeDipole.phi())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.phi();});
-//     event("phi = 0", logDipole);
-//   }
-//   if (isZeroCrossing(oldFreeDipole.beta(), freeDipole.beta())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.beta();});
-//     event("beta = 0", logDipole);
-//   }
-//   if (isNegativeZeroCrossing(oldFreeDipole.pr(), freeDipole.pr())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.pr();});
-//     event("pr = 0", logDipole);
-//   }
-//   if (isZeroCrossing(oldFreeDipole.ptheta(), freeDipole.ptheta())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.ptheta();});
-//     event("ptheta = 0", logDipole);
-//   }
-//   if (isZeroCrossing(oldFreeDipole.pphi(), freeDipole.pphi())) {
-//     var logDipole = Dipole.interpolateZeroCrossing(
-//       oldFreeDipole, freeDipole, function(d) {return d.pphi();});
-//     event("pphi = 0", logDipole);
-//   }
-// }
-
 function doStep() {
   var oldFreeDipole = freeDipole.copy();
 
@@ -295,87 +171,6 @@ function doStep() {
     path.push(vec4(freeDipole.p()[0], freeDipole.p()[1], 0, 1));
     loggedPoint = freeDipole.p();
   }
-
-  // if (!updateP) {
-  //   // Not updating position. Update only moment.
-  //   freeDipole.updateFromRK(rk, updateP, updateM);
-  // } else {
-  //   // Handle separately in case there are collisions.
-  //   var touching = isTouching(fixedDipole.p, freeDipole.p);
-  //   if (touching && collisionType == INELASTIC) {
-  //     // "Sliding" case.
-  //     // Spheres are touching and traveling towards each other.
-  //     // Translate in the tangential direction.
-  //     var tangent = normalize(cross(freeDipole.p, vec3(0, 0, 1)));
-  //     var newv = mult(tangent, dot(rk.v, tangent));
-  //     // newp_tangent is the new position if traveling
-  //     // in the tangent direction
-  //     var newp_tangent = add(freeDipole.p, mult(newv, dt));
-  //     // Traveling in the tangent direction will pull freeDipole off of
-  //     // fixedDipole, so pull freeDipole toward fixedDipole until they touch
-  //     var u = mult(normalize(subtract(newp_tangent, fixedDipole.p)), D);
-  //     var newp = add(fixedDipole.p, u);
-  //     freeDipole.update(newp, newv, rk.theta, rk.omega, updateP, updateM);
-  //   } else {
-  //     // We're not touching or else we're traveling away from the fixed dipole
-  //     var dx = subtract(rk.p, freeDipole.p);
-  //     var qt = computeIntersection(fixedDipole.p, freeDipole.p, dx);
-
-  //     if (qt < 0 || qt > 1 || isNaN(qt)) {
-  //       // No collision
-  //       freeDipole.updateFromRK(rk, updateP, updateM);
-  //     } else {
-  //       // A collision will occur in this time step.
-  //       // Use binary search to find a really close hit.
-  //       elapsedTime -= dt;
-  //       var done = false;
-  //       var iterations = 0;
-  //       while (!done && iterations < 100) {
-  //         dt /= 2;
-  //         var newrk = rk4(freeDipole, dt);
-          
-  //         if (length(subtract(newrk.p, fixedDipole.p)) < D) {
-  //           // Intersects. Don't update position, but rather cut the time
-  //           // step in half and retry.
-  //         } else {
-  //           // No intersection. Update position and try again.
-  //           // TODO: bug here: what if there are multiple zero crossings?
-  //           freeDipole.updateFromRK(newrk, updateP, updateM);
-  //           oldElapsedTime = elapsedTime;
-  //           elapsedTime += dt;
-  //         }
-  //         done = isTouching(fixedDipole.p, freeDipole.p);
-  //         ++iterations;
-  //       }
-
-  //       // At this point freeDipole is on the surface and still heading
-  //       // toward fixedDipole.
-  //       event("collision", freeDipole);
-
-  //       if (collisionType == ELASTIC) {
-  //         // specular reflection
-  //         var normal = normalize(subtract(freeDipole.p, fixedDipole.p));
-  //         var l = normalize(mult(freeDipole.v, -1));
-  //         var refln = 2 * dot(l, normal);
-  //         refln = mult(refln, normal);
-  //         refln = normalize(subtract(refln, l));
-  //         var newv = mult(refln, length(freeDipole.v));
-  //         freeDipole.update(
-  //           freeDipole.p, newv, freeDipole.phi(), freeDipole.av,
-  //           updateP, updateM);
-  //       } else {
-  //         // inelastic collision - really should set v to something meaningful
-  //         var newv = vec3(0, 0, 0);
-  //         var newp = add(freeDipole.p, mult(dx, qt));
-  //         freeDipole.update(
-  //           newp, newv, rk.theta, rk.omega,
-  //           updateP, updateM);
-  //       }
-  //     }
-  //   }
-  // }
-
-  // updateDebug(freeDipole);
 
   // Log zero crossings
   if (isZeroCrossing(oldFreeDipole.theta, freeDipole.theta)) {
@@ -452,13 +247,7 @@ function tick() {
     once = false;
     for (var i = 0; i < animSpeed; ++i) {
       doStep();
-      // if (length(subtract(loggedPoint, freeDipole.p())) > 0.01) {
-      //   console.log("here");
-      //   path.push(vec4(freeDipole.p()[0], freeDipole.p()[1], 0, 1));
-      //   loggedPoint = freeDipole.p();
-      // }
     }
-    // }
 
     var stop = new Date().getTime();
     tickElapsedTime += (stop-start);
@@ -755,10 +544,6 @@ function reset() {
   var pphi = Number(document.getElementById("pphi").value);
 
   freeDipole = new Dipole(r, theta, phi, pr, ptheta, pphi, null);
-
-  // Update debug values
-  // F(freeDipole, true);
-  // T(freeDipole, true);
 
   updateP = document.getElementById("updateP").checked;
   updateM = document.getElementById("updateM").checked;
