@@ -831,6 +831,21 @@ window.onload = function init() {
   var capturedAutostart = /autostart/.exec(url);
   autostart = capturedAutostart ? true : false;
 
+  // Get initial params as parameter in URL
+  let capturedInitParams = /initparams=([^&]+)/.exec(url);
+  // var capturedInitParams = /initparams=(.+)/.exec(url);
+  let paramsString = capturedInitParams ? capturedInitParams[1] : null;
+  if (paramsString) {
+        autostart=true;
+  //   let params = paramsString.split(',').map(x => +x);
+  //   addDemo("url", params[0], params[1], params[2],
+  //           params[3], params[4], params[5]);
+  //   document.getElementById('demos').append("url");
+  //   console.log(demos);
+  //   demo = "url";
+  //   console.log(params);
+  }
+
   // Get delta as parameter in URL
   let captured_dr = /dr=([^&]+)/.exec(url);
   dr = captured_dr ? +captured_dr[1] : null;
@@ -882,11 +897,53 @@ window.onload = function init() {
       
       checkDemoCookie(demo);
       demoChanged();
+
+      if (paramsString) {
+        let params = paramsString.split(',').map(x => +x);
+        addDemo("url", params[0], params[1], params[2],
+                params[3], params[4], params[5]);
+
+        var option = document.createElement("option");
+        option.text = "url";
+        document.getElementById('demos').add(option);
+
+        console.log(demos);
+        demo = "url";
+        console.log(params);
+        document.getElementById("demos").value = "url";
+        demoChanged();
+      }
     }
   });
 
   reset();
   // toggleAnimate();
+}
+
+function addDemo(name, r, theta, phi, pr, ptheta, pphi,
+                 gamma=0, gamma_star=0, eta=0, eta_star=0, mu_m=0, simSpeed=1,
+                 collisionType="elastic", updateP=true, updateM=true,
+                 showPath=true, zoom=0.8) {
+  // console.log("adding " + name);
+  demos[name] = { r:r,
+                  theta:theta,
+                  phi:phi,
+                  pr:pr,
+                  ptheta:ptheta,
+                  pphi:pphi,
+                  gamma:gamma,
+                  gamma_star:gamma_star,
+                  eta:eta,
+                  eta_star:eta_star,
+                  mu_m:mu_m,
+                  simSpeed:simSpeed,
+                  collisionType:collisionType,
+                  updateP:updateP,
+                  updateM:updateM,
+                  showPath:showPath,
+                  zoom:zoom,
+                };
+  // console.log(demos);
 }
 
 function updateDemos(data) {
@@ -903,23 +960,43 @@ function updateDemos(data) {
       option.text = name;
       demoSelect.add(option);
 
-      demos[name] = { r:Number(tokens[j++]),
-                       theta:Number(tokens[j++]),
-                       phi:Number(tokens[j++]),
-                       pr:Number(tokens[j++]),
-                       ptheta:Number(tokens[j++]),
-                       pphi:Number(tokens[j++]),
-                       gamma:Number(tokens[j++]),
-                       gamma_star:Number(tokens[j++]),
-                       eta:Number(tokens[j++]),
-                       eta_star:Number(tokens[j++]),
-                       mu_m:Number(tokens[j++]),
-                       simSpeed:Number(tokens[j++]),
-                       collisionType:tokens[j++],
-                       updateP:(tokens[j++].toLowerCase() == "true"),
-                       updateM:(tokens[j++].toLowerCase() == "true"),
-                       showPath:(tokens[j++].toLowerCase() == "true"),
-                       zoom:Number(tokens[j++]) };
+      addDemo(name, 
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              Number(tokens[j++]),
+              tokens[j++],
+              (tokens[j++].toLowerCase() == "true"),
+              (tokens[j++].toLowerCase() == "true"),
+              (tokens[j++].toLowerCase() == "true"),
+              Number(tokens[j++])
+             );
+
+      // demos[name] = { r:Number(tokens[j++]),
+      //                  theta:Number(tokens[j++]),
+      //                  phi:Number(tokens[j++]),
+      //                  pr:Number(tokens[j++]),
+      //                  ptheta:Number(tokens[j++]),
+      //                  pphi:Number(tokens[j++]),
+      //                  gamma:Number(tokens[j++]),
+      //                  gamma_star:Number(tokens[j++]),
+      //                  eta:Number(tokens[j++]),
+      //                  eta_star:Number(tokens[j++]),
+      //                  mu_m:Number(tokens[j++]),
+      //                  simSpeed:Number(tokens[j++]),
+      //                  collisionType:tokens[j++],
+      //                  updateP:(tokens[j++].toLowerCase() == "true"),
+      //                  updateM:(tokens[j++].toLowerCase() == "true"),
+      //                  showPath:(tokens[j++].toLowerCase() == "true"),
+      //                  zoom:Number(tokens[j++]) };
 
     }
   }
