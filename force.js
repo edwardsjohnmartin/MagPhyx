@@ -836,7 +836,7 @@ window.onload = function init() {
   // var capturedInitParams = /initparams=(.+)/.exec(url);
   let paramsString = capturedInitParams ? capturedInitParams[1] : null;
   if (paramsString) {
-        autostart=true;
+        // autostart=true;
   //   let params = paramsString.split(',').map(x => +x);
   //   addDemo("url", params[0], params[1], params[2],
   //           params[3], params[4], params[5]);
@@ -912,6 +912,7 @@ window.onload = function init() {
         console.log(params);
         document.getElementById("demos").value = "url";
         demoChanged();
+        toggleAnimate();
       }
     }
   });
@@ -923,7 +924,7 @@ window.onload = function init() {
 function addDemo(name, r, theta, phi, pr, ptheta, pphi,
                  gamma=0, gamma_star=0, eta=0, eta_star=0, mu_m=0, simSpeed=1,
                  collisionType="elastic", updateP=true, updateM=true,
-                 showPath=true, zoom=0.8) {
+                 showPath=true, zoom=0.5) {
   // console.log("adding " + name);
   demos[name] = { r:r,
                   theta:theta,
