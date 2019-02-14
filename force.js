@@ -32,6 +32,9 @@ var canvas;
 var canvasX, canvasY;
 var canvasWidth, canvasHeight;
 
+// Reduce this for higher resolution paths.
+var pathResln = 0.001;
+
 // Frustum width and height
 var fw, fh;
 var gl;
@@ -195,7 +198,8 @@ function doStep() {
   logger.stateChanged(freeDipole);
   elapsedTime += stepper.t;
 
-  if (length(subtract(loggedPoint, freeDipole.p())) > 0.01) {
+  // if (length(subtract(loggedPoint, freeDipole.p())) > 0.01) {
+  if (length(subtract(loggedPoint, freeDipole.p())) > pathResln) {
     path.push(vec4(freeDipole.p()[0], freeDipole.p()[1], 0, 1));
     loggedPoint = freeDipole.p();
   }
