@@ -684,7 +684,8 @@ Renderer.prototype.doRender = function() {
   }
   fw *= zoom;
   fh *= zoom;
-  pMatrix = ortho(0-fw/2, fw/2, 0-fh/2, fh/2, 0, 2);
+  pMatrix = ortho(-center[0]-fw/2, -center[0]+fw/2,
+                  -center[1]-fh/2, -center[1]+fh/2, 0, 2);
 
   mvMatrix = lookAt(eye, at , up);  
   if (rotAngle != 0) {

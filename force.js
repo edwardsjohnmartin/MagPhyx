@@ -79,6 +79,8 @@ var rotMatrix = mat4(1.0);
 var defaultZoom = 0.8;
 var zoom = defaultZoom;
 var downZoom = 1;
+var center = vec2(0, 0);
+var centerDown = vec2(0, 0);
 var LEFT_BUTTON = 0;
 var RIGHT_BUTTON = 2;
 
@@ -336,6 +338,7 @@ function keyDown(e) {
     // }
   }
 
+  const inc = 0.3;
   switch (e.keyCode) {
   case 37:
     // left arrow
@@ -448,23 +451,20 @@ function onMouseDown(e) {
   mouseDown = true;
   mouseDownPos = win2obj(vec2(e.clientX, e.clientY));
   button = e.button;
-  // if (button == RIGHT_BUTTON) {
-  // zooming = false;
+
+  centerDown = center;
+  // center = mouseDownPos;
+
   // if (e.shiftKey) {
-  //   zooming = true;
-  //   downZoom = zoom;
+  //   rotatePoint(mouseDownPos, freeDipole);
+  // } else {
+  //   movePoint(mouseDownPos, freeDipole);
   // }
-  if (e.shiftKey) {
-    rotatePoint(mouseDownPos, freeDipole);
-  } else {
-    movePoint(mouseDownPos, freeDipole);
-  }
 }
 
 function onMouseUp() {
   if (mouseDown) {
     mouseDown = false;
-    // if (button == LEFT_BUTTON) {
     if (!zooming) {
       rotMatrix = mult(rotate(rotAngle*180.0/Math.PI, rotVec), rotMatrix);
       rotAngle = 0;
@@ -476,23 +476,12 @@ function onMouseMove(e) {
   mousePos = win2obj(vec2(e.clientX, e.clientY));
 
   if (mouseDown && mouseDownPos != mousePos) {
-    if (e.shiftKey) {
-      rotatePoint(mousePos, freeDipole);
-    } else {
-      movePoint(mousePos, freeDipole);
-    }
-
-    // arcball
-    // if (!zooming) {
-    //   var down_v = mapMouse(mouseDownPos);
-    //   var v = mapMouse(mousePos);
-    //   rotVec = normalize(cross(down_v, v));
-    //   rotAngle = Math.acos(dot(down_v, v) / length(v));
+    moveCenter();
+    // if (e.shiftKey) {
+    //   rotatePoint(mousePos, freeDipole);
     // } else {
-    //   var factor = 2;
-    //   zoom = downZoom * Math.pow(factor, mousePos[1] - mouseDownPos[1]);
+    //   movePoint(mousePos, freeDipole);
     // }
-    // render();
   }
 }
 
@@ -517,9 +506,6 @@ function win2obj(p) {
 }
 
 function rotatePoint(p, dipole) {
-// function rotatePoint(mousePos, dipole) {
-  // var p = vec3(mousePos[0], mousePos[1], 0.0);
-  // var v = subtract(p, dipole.p);
   var v = vec3(p[0], p[1], 0);
   var phi = degrees(Math.atan2(v[1], v[0]));
   document.getElementById("phi").value = phi;
@@ -527,7 +513,6 @@ function rotatePoint(p, dipole) {
 }
 
 function movePoint(p, dipole) {
-  // var v = subtract(vec3(p[0], p[1], 0), fixedDipole.p);
   var v = vec3(p[0], p[1], 0);
   if (length(v) < D) {
     p = add(vec3(0, 0, 0), mult(normalize(v), D));
@@ -535,6 +520,12 @@ function movePoint(p, dipole) {
   document.getElementById("r").value = length(p);
   document.getElementById("theta").value = degrees(Math.atan2(p[1], p[0]));
   reset();
+}
+
+function moveCenter() {
+  let v = subtract(mousePos, mouseDownPos);
+  center = add(centerDown, v);
+  render();
 }
 
 // See https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
@@ -907,9 +898,9 @@ window.onload = function init() {
         option.text = "url";
         document.getElementById('demos').add(option);
 
-        console.log(demos);
+        // console.log(demos);
         demo = "url";
-        console.log(params);
+        // console.log(params);
         document.getElementById("demos").value = "url";
         demoChanged();
         toggleAnimate();
