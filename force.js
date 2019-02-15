@@ -84,6 +84,7 @@ var zoom = defaultZoom;
 var downZoom = 1;
 var center = vec2(0, 0);
 var centerDown = vec2(0, 0);
+var lastCenter = vec2(0, 0);
 var LEFT_BUTTON = 0;
 var RIGHT_BUTTON = 2;
 
@@ -434,16 +435,21 @@ function keyDown(e) {
 //------------------------------------------------------------
 // Mouse handlers
 //------------------------------------------------------------
+var mouseMoved = false;
 function onMouseClick(e) {
   var p = win2obj(vec2(e.clientX, e.clientY));
-  if (length(subtract(p, mouseDownPos)) < 0.01) {
-    // addPoint(p);
-    if (e.shiftKey) {
-      rotatePoint(p, freeDipole);
-    } else {
-      movePoint(p, freeDipole);
-    }
+  if (!mouseMoved) {//p[0] == mouseDownPos[0] && p[1] == mouseDownPos[1]) {
+    center = vec2(-p[0], -p[1]);
+    lastCenter = center;
   }
+  // if (length(subtract(p, mouseDownPos)) < 0.01) {
+  //   // addPoint(p);
+  //   if (e.shiftKey) {
+  //     rotatePoint(p, freeDipole);
+  //   } else {
+  //     movePoint(p, freeDipole);
+  //   }
+  // }
 }
 
 function removeFocus() {
@@ -452,11 +458,13 @@ function removeFocus() {
 
 var zooming;
 function onMouseDown(e) {
+  mouseMoved = false;
   mouseDown = true;
   mouseDownPos = win2obj(vec2(e.clientX, e.clientY));
   button = e.button;
 
   centerDown = center;
+  lastCenter = center;
   // center = mouseDownPos;
 
   // if (e.shiftKey) {
@@ -473,10 +481,12 @@ function onMouseUp() {
       rotMatrix = mult(rotate(rotAngle*180.0/Math.PI, rotVec), rotMatrix);
       rotAngle = 0;
     }
+    lastCenter = center;
   }
 }
 
 function onMouseMove(e) {
+  mouseMoved = true;
   mousePos = win2obj(vec2(e.clientX, e.clientY));
 
   if (mouseDown && mouseDownPos != mousePos) {
@@ -506,7 +516,7 @@ function win2obj(p) {
   var y = fh * (canvasHeight-(p[1]-canvasY)) / canvasHeight;
   x = x - fw/2;
   y = y - fh/2;
-  return vec2(x, y);
+  return vec2(x-lastCenter[0], y-lastCenter[1]);
 }
 
 function rotatePoint(p, dipole) {
@@ -527,7 +537,7 @@ function movePoint(p, dipole) {
 }
 
 function moveCenter() {
-  let v = subtract(mousePos, mouseDownPos);
+  let v = subtract(mouseDownPos, mousePos);
   center = add(centerDown, v);
   render();
 }
