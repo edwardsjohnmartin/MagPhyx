@@ -313,14 +313,58 @@ function toggleAnimate() {
   setAnimate(!animate);
 }
 
-function zoomIn() {
-  zoom = zoom * 0.9;
+function setZoom(z, doRender = false) {
+  zoom = z;
+  // document.getElementById("zoom-input").value = zoom;
+  if (doRender) render();
+}
+
+function setCenter(c) {
+  center = c;
+  // document.getElementById("centerx-input").value = c[0];
+  // document.getElementById("centery-input").value = c[1];
+}
+
+function saveView() {
+  // Properties from local storage
+  const view = {
+    zoom: zoom,
+    center: center,
+    showB: showB,
+    showFreeDipole: showFreeDipole,
+  };
+  window.localStorage.setItem("view", JSON.stringify(view));
+}
+
+function loadView() {
+  let view = JSON.parse(window.localStorage.getItem("view"));
+  if (view) {
+    zoom = view.zoom;
+    center = view.center;
+    showB = view.showB;
+    showFreeDipole = view.showFreeDipole;
+  }
+}
+
+function defaultNav() {
+  setZoom(defaultZoom);
+  setCenter(vec2(0,0));
+  saveView();
   render();
 }
 
+function zoomIn() {
+  setZoom(zoom * 0.9, true);
+  saveView();
+  // zoom = zoom * 0.9;
+  // render();
+}
+
 function zoomOut() {
-  zoom = zoom * 1.1;
-  render();
+  setZoom(zoom * 1.1, true);
+  saveView();
+  // zoom = zoom * 1.1;
+  // render();
 }
 
 function adjustSimSpeed(factor) {
@@ -409,6 +453,7 @@ function keyDown(e) {
     break;
   case "M".charCodeAt(0):
     showB = !showB;
+    saveView();
     render();
     break;
   case "D".charCodeAt(0):
@@ -422,6 +467,7 @@ function keyDown(e) {
     break;
   case "W".charCodeAt(0):
     showFreeDipole = !showFreeDipole;
+    saveView();
     render();
     break;
   case "C".charCodeAt(0):
@@ -460,7 +506,9 @@ var mouseMoved = false;
 function onMouseClick(e) {
   var p = win2obj(vec2(e.clientX, e.clientY));
   if (!mouseMoved) {//p[0] == mouseDownPos[0] && p[1] == mouseDownPos[1]) {
-    center = vec2(-p[0], -p[1]);
+    setCenter(vec2(-p[0], -p[1]));
+    saveView();
+    // center = vec2(-p[0], -p[1]);
     lastCenter = center;
   }
   // if (length(subtract(p, mouseDownPos)) < 0.01) {
@@ -559,7 +607,9 @@ function movePoint(p, dipole) {
 
 function moveCenter() {
   let v = subtract(mouseDownPos, mousePos);
-  center = add(centerDown, v);
+  setCenter(add(centerDown, v));
+  saveView();
+  // center = add(centerDown, v);
   render();
 }
 
@@ -711,9 +761,11 @@ function demoChanged() {
     }
   });
   if (demo.hasOwnProperty("zoom")) {
-    zoom = demo.zoom;
+    setZoom(demo.zoom);
+    // zoom = demo.zoom;
   } else {
-    zoom = defaultZoom;
+    setZoom(defaultZoom);
+    // zoom = defaultZoom;
   }
   reset();
   render();
@@ -927,7 +979,10 @@ window.onload = function init() {
       if (paramsString) {
         let params = paramsString.split(',').map(x => +x);
         addDemo("url", params[0], params[1], params[2],
-                params[3], params[4], params[5]);
+                params[3], params[4], params[5],
+                0, 0, 0, 0, 0, 1,
+                 "elastic", true, true,
+                 true, zoom);
 
         var option = document.createElement("option");
         option.text = "url";
@@ -939,9 +994,13 @@ window.onload = function init() {
         document.getElementById("demos").value = "url";
         demoChanged();
         toggleAnimate();
+
+        loadView();
       }
     }
   });
+
+  loadView();
 
   reset();
   // toggleAnimate();
