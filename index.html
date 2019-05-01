@@ -2,7 +2,8 @@
 <html>
   <head>
     <title>MagPhyx</title>
-    <link rel="stylesheet" href="./font-awesome-4.5.0/css/font-awesome.min.css">
+    <!--link rel="stylesheet" href="./font-awesome-4.5.0/css/font-awesome.min.css"-->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="style.css">
     
     <!------------------------------------------------------------>
@@ -76,7 +77,7 @@
                  onclick="zoomIn()"
                  onfocus="removeFocus()"
                  title="zoom in (+)">
-                <font size="6"><i class="fa fa-search-plus"></i></font></button>
+                <font size="6"><i class="fas fa-search-plus"></i></font></button>
               <br>
               <button
                  type="button"
@@ -84,7 +85,7 @@
                  onclick="zoomOut()"
                  onfocus="removeFocus()"
                  title="zoom out (-)">
-                <font size="6"><i class="fa fa-search-minus"></i></font></button>
+                <font size="6"><i class="fas fa-search-minus"></i></font></button>
               <br>
               <button
                  type="button"
@@ -92,7 +93,19 @@
                  onclick="exportLog()"
                  onfocus="removeFocus()"
                  title="save log file (s)">
-                <font size="6"><i class="fa fa-floppy-o"></i></font></button>
+                <!--font size="6"><i class="fa fa-floppy-o"></i></font></button-->
+                <font size="6"><i class="fas fa-save"></i></font></button>
+              <br>
+              <a
+                 type="button"
+                 class="cbutton LinkButton"
+                 onclick="snapshot()"
+                 onfocus="removeFocus()"
+                 href="#"
+                 download="magphyx.png"
+                 id="snapshotbutton"
+                 title="snapshot">
+                <font size="6"><i class="fas fa-camera"></i></font></a>
               <br>
               <br>
 
@@ -103,7 +116,7 @@
                  onclick="resetClicked()"
                  onfocus="removeFocus()"
                  title="reset position (r)">
-                <font size="6"><i class="fa fa-refresh"></i></font></button>
+                <font size="6"><i class="fas fa-sync-alt"></i></font></button>
               <br>
               <button
                  type="button"
@@ -112,7 +125,7 @@
                  onclick="toggleAnimate()"
                  onfocus="removeFocus()"
                  title="play/pause animation (spacebar)">
-                <font size="6"><i class="fa fa-play"></i></font></button>
+                <font size="6"><i class="fas fa-play"></i></font></button>
             </div>
           </div-->
         </td>
@@ -143,6 +156,20 @@
       </tr>
       <tr>
         <td style="vertical-align:bottom">
+          <!--------------------------------------------------------->
+          <!-- Instructions -->
+          <!--------------------------------------------------------->
+          spacebar - play<br>
+          r - reset<br>
+          &uarr; - inc speed<br>
+          &darr; - dec speed<br>
+          + - zoom in<br>
+          - - zoom out<br>
+          m - toggle mag field<br>
+          p - toggle path<br>
+          d - toggle domain<br>
+          w - toggle dipole<br>
+          <br>
           <!--------------------------------------------------------->
           <!-- Debug output -->
           <!--------------------------------------------------------->

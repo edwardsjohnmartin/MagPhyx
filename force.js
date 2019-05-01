@@ -102,6 +102,7 @@ var showDomain = true;
 var showCircles = true;
 // var showOutlineMode = false;
 var showPath = false;
+var showFreeDipole = true;
 var showAnimation = true;
 
 var logAllEvents = true;
@@ -332,6 +333,22 @@ function exportLog() {
   logger.exportLog();
 }
 
+function snapshot() {
+  var canvas = document.getElementById('gl-canvas');
+  // Canvas2Image.saveAsPNG(canvas);//, width, height)
+
+  // canvas.setAttribute('crossOrigin','anonymous');
+  // var img = document.getElementById('imageToShowCanvas');
+  // img.src = canvas.toDataURL();
+  // renderer.doRender();
+  var dataURL = canvas.toDataURL("image/png");
+  // console.log(img);
+  // window.open(img);
+  var button = document.getElementById('snapshotbutton');
+  button.href = dataURL;
+  // window.location.href=dataURL;
+}
+
 function keyDown(e) {
   if (e.target != document.body) {
     if (e.target.type != "button") {
@@ -401,6 +418,10 @@ function keyDown(e) {
   case "P".charCodeAt(0):
     showPath = !showPath;
     // showOutlineMode = !showOutlineMode;
+    render();
+    break;
+  case "W".charCodeAt(0):
+    showFreeDipole = !showFreeDipole;
     render();
     break;
   case "C".charCodeAt(0):
@@ -790,7 +811,7 @@ window.onload = function init() {
   canvasWidth = canvas.width;
   canvasHeight = canvas.height;
 
-  gl = WebGLUtils.setupWebGL(canvas);
+  gl = WebGLUtils.setupWebGL(canvas, { preserveDrawingBuffer:true });
   if (!gl) { alert("WebGL isn't available"); }
 
   document.getElementById('eventFile').addEventListener(

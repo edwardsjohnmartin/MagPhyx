@@ -196,6 +196,9 @@ Renderer.prototype.renderCircle = function(fixed) {
 
 Renderer.prototype.renderCircleOutline = function(fixed) {
   if (!circleProgram.initialized) return;
+  if (!showFreeDipole) {
+    return true;
+  }
   gl.useProgram(circleProgram.program);
 
   gl.enableVertexAttribArray(circleProgram.vertexLoc);
