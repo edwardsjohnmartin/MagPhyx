@@ -346,10 +346,13 @@ function loadView() {
   }
 }
 
-function defaultNav() {
+function defaultView1() {
   setZoom(defaultZoom);
   setCenter(vec2(0,0));
+  showB = true;
+  showFreeDipole = true;
   saveView();
+  console.log('defaultView');
   render();
 }
 
@@ -529,18 +532,12 @@ var zooming;
 function onMouseDown(e) {
   mouseMoved = false;
   mouseDown = true;
-  mouseDownPos = win2obj(vec2(e.clientX, e.clientY));
-  button = e.button;
 
   centerDown = center;
+  // console.log('centerDown = ' + centerDown);
   lastCenter = center;
-  // center = mouseDownPos;
 
-  // if (e.shiftKey) {
-  //   rotatePoint(mouseDownPos, freeDipole);
-  // } else {
-  //   movePoint(mouseDownPos, freeDipole);
-  // }
+  mouseDownPos = win2obj(vec2(e.clientX, e.clientY));
 }
 
 function onMouseUp() {
@@ -551,6 +548,7 @@ function onMouseUp() {
       rotAngle = 0;
     }
     lastCenter = center;
+    saveView();
   }
 }
 
@@ -560,11 +558,6 @@ function onMouseMove(e) {
 
   if (mouseDown && mouseDownPos != mousePos) {
     moveCenter();
-    // if (e.shiftKey) {
-    //   rotatePoint(mousePos, freeDipole);
-    // } else {
-    //   movePoint(mousePos, freeDipole);
-    // }
   }
 }
 
@@ -608,7 +601,6 @@ function movePoint(p, dipole) {
 function moveCenter() {
   let v = subtract(mouseDownPos, mousePos);
   setCenter(add(centerDown, v));
-  saveView();
   // center = add(centerDown, v);
   render();
 }
