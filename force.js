@@ -482,6 +482,9 @@ function keyDown(e) {
   case "S".charCodeAt(0):
     exportLog();
     break;
+  case "E".charCodeAt(0):
+    exportDemo();
+    break;
   case "V".charCodeAt(0):
     if (e.shiftKey) {
       verbose = !verbose;
@@ -740,6 +743,28 @@ function collisionTypeChanged() {
 
 function simSpeedChanged() {
   simSpeed = Number(document.getElementById("simSpeed").value);
+}
+
+function exportDemo() {
+  let r = +document.getElementById('r').value;
+  let theta = +document.getElementById('theta').value;
+  let phi = +document.getElementById('phi').value;
+  let pr = +document.getElementById('pr').value;
+  let ptheta = +document.getElementById('ptheta').value;
+  let pphi = +document.getElementById('pphi').value;
+  let gamma = +document.getElementById('gamma').value;
+  let gamma_star = +document.getElementById('gamma_star').value;
+  let eta = +document.getElementById('eta').value;
+  let eta_star = +document.getElementById('eta_star').value;
+  let mu_m = +document.getElementById('mu_m').value;
+  let simSpeed = +document.getElementById('simSpeed').value;
+  let collisionType = document.getElementById('collisionType').value;
+  let updateP = document.getElementById('updateP').checked;
+  let updateM = document.getElementById('updateM').checked;
+  let showPath = document.getElementById('showPath').checked;
+  console.log(`Demo xx,${r},${theta},${phi},${pr},${ptheta},${pphi},${gamma},`+
+              `${gamma_star},${eta},${eta_star},${mu_m},${simSpeed},`+
+              `${collisionType},${updateP},${updateM},${showPath},0.8,`)
 }
 
 function demoChanged() {
